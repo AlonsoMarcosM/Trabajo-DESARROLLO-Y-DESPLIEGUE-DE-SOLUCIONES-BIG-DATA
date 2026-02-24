@@ -1,4 +1,4 @@
-\documentclass[12pt,a4paper]{article}
+﻿\documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[spanish]{babel}
@@ -6,8 +6,8 @@
 \geometry{margin=2.5cm}
 
 \title{Hito 2: Preparación y gestión de datos}
-\author{Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es}) \\ JBJOSE Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})}
-\date{Plantilla preparada en febrero de 2026}
+\author{Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es}) \\ Jose Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})}
+\date{Marzo de 2026}
 
 \begin{document}
 \maketitle
@@ -19,35 +19,39 @@
   \item Curso académico: 2025-2026.
 \end{itemize}
 
-\section{Objetivo}
-Construir y validar la arquitectura de datos para el caso de churn.
+\section{Objetivo del hito}
+El objetivo de este hito es construir una base de datos fiable para modelado, resolviendo carga, validación, trazabilidad y preparación de tablas para entrenamiento.
 
-\section{Estructura de contenido}
+\section{Alcance técnico}
+El trabajo se organiza en cuatro bloques: entorno colaborativo en Databricks, ingesta en bronze, calidad en silver y construcción de features en gold. La ejecución se mantiene en modo batch para controlar complejidad y coste.
+
+\section{Diseño de datos previsto}
+\subsection{Capa bronze}
+Conservación del dato en bruto con metadatos de auditoría (ingestión, origen y registros rescatados por errores de esquema).
+
+\subsection{Capa silver}
+Aplicación de reglas de calidad (nulos, rangos, tipos y coherencia temporal) y envío de anomalías a cuarentena para análisis.
+
+\subsection{Capa gold}
+Construcción de variables dinámicas y estáticas para generar una tabla base de modelado para el Hito 3.
+
+\section{Plan de ejecución}
 \begin{itemize}
-  \item Configuración de entorno y control de versiones.
-  \item Infraestructura de datos y gobernanza.
-  \item Capa bronze (ingesta y auditoría).
-  \item Capa silver (calidad, cuarentena, históricos).
-  \item Capa gold (features y tabla spine).
-  \item Ejecución del pipeline (Triggered/Continuous).
-  \item Evidencias y validaciones.
+  \item Semana 1: entorno, permisos, estructura de trabajo y primera carga.
+  \item Semana 2: reglas de calidad y cuarentena.
+  \item Semana 3: tablas gold y validación final.
 \end{itemize}
 
-\section{Mermaid pendiente}
-\begin{verbatim}
-flowchart LR
-    A[Fuentes] --> B[Bronze]
-    B --> C[Silver]
-    C --> D[Gold]
-    D --> E[Feature Store]
-\end{verbatim}
+Reparto en pareja: Alonso en pipeline y trazabilidad; Jose en calidad de datos y validación de variables; decisiones y memoria en conjunto.
 
-\section{Checklist}
+\section{Riesgos y mitigación}
 \begin{itemize}
-  \item Entorno colaborativo configurado.
-  \item Capas bronze/silver/gold documentadas.
-  \item Reglas de calidad y cuarentena justificadas.
-  \item Evidencias de recuentos y esquemas.
+  \item Esquemas inestables: validaciones tempranas y versionado.
+  \item Falta de cobertura de variables: análisis de completitud antes de cerrar gold.
+  \item Retraso de integración: priorización de MVP completo y ampliación incremental.
 \end{itemize}
+
+\section{Resultado esperado}
+Al cierre del hito debe existir un pipeline ejecutable, tablas documentadas y dataset consistente para entrenamiento del modelo de churn.
 
 \end{document}

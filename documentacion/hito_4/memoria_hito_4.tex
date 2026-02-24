@@ -1,4 +1,4 @@
-\documentclass[12pt,a4paper]{article}
+﻿\documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[spanish]{babel}
@@ -6,8 +6,8 @@
 \geometry{margin=2.5cm}
 
 \title{Hito 4: Despliegue y monitorización}
-\author{Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es}) \\ JBJOSE Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})}
-\date{Plantilla preparada en febrero de 2026}
+\author{Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es}) \\ Jose Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})}
+\date{Mayo de 2026}
 
 \begin{document}
 \maketitle
@@ -19,33 +19,33 @@
   \item Curso académico: 2025-2026.
 \end{itemize}
 
-\section{Objetivo}
-Desplegar la solución de churn y controlar su rendimiento técnico y de negocio.
+\section{Objetivo del hito}
+Poner en operación el modelo seleccionado y cerrar un ciclo funcional de scoring, activación de campañas y monitorización técnica y de negocio.
 
-\section{Estructura}
+\section{Estrategia de despliegue}
+Se adopta un despliegue batch para controlar riesgo y coste en la primera versión. Se priorizan estabilidad, trazabilidad y capacidad de rollback.
+
+\section{Integración operativa}
+El flujo operativo incluye scoring de churn, entrega de segmentos de campaña y realimentación con resultados para iteraciones posteriores.
+
+\section{Monitorización}
+\subsection{Técnica}
+Estado de ejecuciones, tiempos de pipeline y calidad de datos de entrada.
+
+\subsection{Modelo}
+Evolución de recall/precisión, señales de drift y criterios de reentrenamiento.
+
+\subsection{Negocio}
+Clientes retenidos, incentivos evitados y comparación entre ROI estimado y observado.
+
+\section{Riesgos y respuesta}
 \begin{itemize}
-  \item Estrategia de despliegue y rollback.
-  \item Integración con sistemas operativos (CRM/campañas).
-  \item Monitorización técnica (rendimiento, drift, errores).
-  \item Monitorización de negocio (retención, ahorro, ROI).
-  \item Gobierno, privacidad y fairness en producción.
+  \item Caída de pipeline: reintento y rollback al último resultado válido.
+  \item Degradación del modelo: alertas por umbral y plan de reentrenamiento.
+  \item Baja adopción operativa: documentación clara y validación con negocio.
 \end{itemize}
 
-\section{Mermaid pendiente}
-\begin{verbatim}
-flowchart LR
-    A[Modelo registrado] --> B[Endpoint o batch scorer]
-    B --> C[CRM y campanas]
-    C --> D[Resultados negocio]
-    D --> E[Monitorizacion y alertas]
-    E --> F[Reentrenamiento]
-\end{verbatim}
-
-\section{Checklist}
-\begin{itemize}
-  \item Despliegue funcional.
-  \item Monitorización técnica y de negocio activa.
-  \item Plan de mejora continua y reentrenamiento.
-\end{itemize}
+\section{Resultado esperado}
+Cierre del proyecto con flujo extremo a extremo en funcionamiento: datos, modelo, decisión comercial y medición de impacto.
 
 \end{document}

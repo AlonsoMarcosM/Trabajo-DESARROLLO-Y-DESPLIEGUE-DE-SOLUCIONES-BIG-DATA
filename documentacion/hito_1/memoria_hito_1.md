@@ -7,7 +7,7 @@
 - Curso académico: **2025-2026**
 - Integrantes:
 - **Alonso Marcos Muñoz** (`Alonso.Marcos@alu.uclm.es`)
-- **JBJOSE Barros Ribademar** (`Jose.Barros1@alu.uclm.es`)
+- **Jose Barros Ribademar** (`Jose.Barros1@alu.uclm.es`)
 - Fecha de elaboración: **febrero de 2026**
 
 ## 1. Introducción del hito

@@ -1,4 +1,4 @@
-\documentclass[12pt,a4paper]{article}
+﻿\documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[spanish]{babel}
@@ -6,8 +6,8 @@
 \geometry{margin=2.5cm}
 
 \title{Hito 3: Modelado y experimentación}
-\author{Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es}) \\ JBJOSE Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})}
-\date{Plantilla preparada en febrero de 2026}
+\author{Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es}) \\ Jose Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})}
+\date{Abril de 2026}
 
 \begin{document}
 \maketitle
@@ -19,33 +19,39 @@
   \item Curso académico: 2025-2026.
 \end{itemize}
 
-\section{Objetivo}
-Entrenar, validar y seleccionar el modelo de churn.
+\section{Objetivo del hito}
+Entrenar y comparar modelos de churn sobre la base de datos consolidada, seleccionando una versión final técnicamente robusta y alineada con objetivos de negocio.
 
-\section{Estructura}
+\section{Enfoque de modelado}
+Se trabajará de forma incremental: baseline reproducible, mejoras controladas y selección final basada en evidencia. Se prioriza estabilidad y explicabilidad frente a complejidad excesiva.
+
+\section{Diseño experimental}
+\subsection{Separación temporal}
+La partición será temporal para evitar fuga de información entre entrenamiento y validación.
+
+\subsection{Métricas}
+Métricas principales: recall, precisión y F1. Métricas de soporte: AUC-PR y análisis por segmentos.
+
+\subsection{Fairness}
+Revisión de equidad mediante Equal Opportunity Difference para comprobar consistencia de detección entre grupos.
+
+\section{Plan de trabajo}
 \begin{itemize}
-  \item Diseño experimental y particionado temporal.
-  \item Modelos baseline y candidatos avanzados.
-  \item Métricas técnicas y de negocio.
-  \item Fairness y robustez temporal.
-  \item Trazabilidad de experimentos.
-  \item Selección del modelo final.
+  \item Semana 1: baseline y validación del pipeline de entrenamiento.
+  \item Semana 2: ingeniería de variables y tuning acotado.
+  \item Semana 3: comparación final, fairness y selección del modelo.
 \end{itemize}
 
-\section{Mermaid pendiente}
-\begin{verbatim}
-flowchart LR
-    A[Features Gold] --> B[Train/Validation/Test]
-    B --> C[Experimentos MLflow]
-    C --> D[Modelo final]
-\end{verbatim}
+Reparto: Alonso en pipeline/MLflow; Jose en análisis de resultados y selección final; documentación y defensa en conjunto.
 
-\section{Checklist}
+\section{Riesgos y control}
 \begin{itemize}
-  \item Protocolo reproducible.
-  \item Métricas de negocio alineadas con ROI.
-  \item Fairness evaluada.
-  \item Modelo final registrado y versionado.
+  \item Sobreajuste por tuning excesivo: limitar búsqueda y validar temporalmente.
+  \item Mejora técnica sin impacto operativo: medir también métricas de negocio.
+  \item Baja explicabilidad: priorizar interpretación de variables y decisión trazable.
 \end{itemize}
+
+\section{Resultado esperado}
+Modelo candidato preparado para despliegue, con trazabilidad completa de experimentos y argumentos sólidos para su defensa técnica y de negocio.
 
 \end{document}

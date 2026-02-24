@@ -1,4 +1,4 @@
-# Hito 2: Preparación y gestión de datos
+﻿# Hito 2: Preparación y gestión de datos
 
 ## Datos de la entrega
 
@@ -7,74 +7,71 @@
 - Curso académico: **2025-2026**
 - Integrantes:
 - **Alonso Marcos Muñoz** (`Alonso.Marcos@alu.uclm.es`)
-- **JBJOSE Barros Ribademar** (`Jose.Barros1@alu.uclm.es`)
-- Fecha de edición de plantilla: **febrero de 2026**
+- **Jose Barros Ribademar** (`Jose.Barros1@alu.uclm.es`)
+- Fecha prevista del hito: **20 de marzo de 2026**
 
-## 1. Objetivo
+## 1. Objetivo del hito
 
-Construir y validar la arquitectura de datos para soportar el modelado del churn, siguiendo la guía del proyecto.
+El objetivo de este hito es transformar el planteamiento de negocio del Hito 1 en una base de datos fiable para modelado. En términos prácticos, debemos dejar resuelto cómo se cargan los datos, cómo se validan, cómo se versionan y qué tablas finales se utilizarán en entrenamiento.
 
-Fecha objetivo oficial: **20 de marzo de 2026**.
+## 2. Alcance técnico
 
-## 2. Estructura recomendada de la memoria
+En esta fase vamos a centrarnos en cuatro bloques:
 
-### 2.1 Configuración del entorno y control de versiones
+1. Configuración de entorno y trabajo colaborativo en Databricks.
+2. Ingesta de datos en una capa inicial (bronze) con trazabilidad.
+3. Refinamiento y control de calidad en capa intermedia (silver).
+4. Construcción de tablas de características para el modelo (gold).
 
-- Workspace compartido en Databricks.
-- Permisos entre miembros de la pareja y profesorado.
-- Repositorio GitHub y convención de ramas.
+El alcance se limita a un flujo batch estable. No vamos a forzar ejecución continua en este hito porque no aporta valor inmediato para validar la calidad del dato.
 
-### 2.2 Infraestructura de datos y gobernanza
+## 3. Diseño de datos previsto
 
-- Catálogo, esquema y objetos de datos (Unity Catalog).
-- Convención de nombres por capas (`bronze`, `silver`, `gold`).
+### 3.1 Capa bronze
 
-### 2.3 Capa bronze (ingesta)
+En bronze queremos conservar el dato lo más cercano posible al origen, incluyendo metadatos de auditoría (momento de ingestión, fichero fuente y registros rescatados por errores de esquema).
 
-- Carga de tablas de contexto y flujos de eventos.
-- Metadatos de auditoría (`ingestion_timestamp`, `source_file`, `_rescued_data`).
-- Verificación de recuentos y esquema.
+### 3.2 Capa silver
 
-### 2.4 Capa silver (calidad y refinamiento)
+En silver aplicaremos reglas explícitas de calidad: nulos en claves, rangos válidos, tipos de dato consistentes y coherencia temporal. Los registros que no cumplan reglas no se eliminarán sin control; se enviarán a cuarentena para poder analizarlos.
 
-- Reglas de calidad (`expectations`) y modularización.
-- Cuarentena (DLQ) y análisis de registros inválidos.
-- Gestión de históricos (SCD tipo 2 / CDC).
-- Cruces stream-stream con watermark.
+### 3.3 Capa gold
 
-### 2.5 Capa gold (features)
+En gold construiremos dos grupos de variables:
 
-- Agregaciones dinámicas por ventana temporal.
-- Perfiles estáticos.
-- Tabla spine/ancla para entrenamiento.
-- Preparación para feature store.
+- Variables de comportamiento reciente (ventanas temporales).
+- Variables de perfil más estables.
 
-### 2.6 Ejecución y modos de pipeline
-
-- Modo `Triggered` en entorno académico.
-- Justificación de paso potencial a `Continuous`.
-
-### 2.7 Evidencias obligatorias
-
-- Esquemas y recuentos por tabla.
-- Reglas de calidad aplicadas y resultado.
-- Tabla(s) de cuarentena y análisis de causas.
-- Diagrama Mermaid del flujo de datos final.
-
-## 3. Diagramas Mermaid pendientes
+El resultado será una tabla base lista para entrenamiento del modelo de churn en el Hito 3.
 
 ```mermaid
 flowchart LR
-    A[Fuentes] --> B[Bronze]
-    B --> C[Silver]
-    C --> D[Gold]
-    D --> E[Feature Store]
+    A[Fuentes de datos] --> B[Bronze: ingesta y metadatos]
+    B --> C[Silver: calidad y reglas]
+    C --> D[Gold: features]
+    D --> E[Dataset de modelado]
 ```
 
-## 4. Checklist de cierre
+## 4. Plan de ejecución
 
-- [ ] Entorno colaborativo y versionado configurados.
-- [ ] Capa bronze validada con metadatos.
-- [ ] Capa silver con reglas y cuarentena.
-- [ ] Capa gold lista para modelado.
-- [ ] Memoria técnica y anexos completados.
+Nuestro plan en pareja es secuencial, para evitar bloqueos:
+
+- Semana 1: entorno, permisos, estructura de repositorio y primera carga.
+- Semana 2: reglas de calidad y cuarentena.
+- Semana 3: creación de tablas gold y validación final de datos.
+
+Reparto de trabajo:
+
+- Alonso: pipeline de ingesta, modelado de capas y trazabilidad técnica.
+- Jose: definición de reglas de calidad, análisis de anomalías y validación de variables.
+- Ambos: decisiones de diseño, documentación y preparación de defensa.
+
+## 5. Riesgos y mitigación
+
+- Riesgo de esquemas inestables: fijar validaciones tempranas y versionar cambios.
+- Riesgo de datos incompletos para modelado: análisis de cobertura por variable antes de cerrar gold.
+- Riesgo de retraso en integración: priorizar MVP de pipeline completo y ampliar después.
+
+## 6. Resultado esperado del hito
+
+Al cierre del Hito 2 debemos tener un pipeline ejecutable, tablas documentadas y un dataset consistente para entrenar el primer modelo en el Hito 3. Esto permitirá pasar del diseño conceptual a trabajo cuantitativo real sobre datos.
