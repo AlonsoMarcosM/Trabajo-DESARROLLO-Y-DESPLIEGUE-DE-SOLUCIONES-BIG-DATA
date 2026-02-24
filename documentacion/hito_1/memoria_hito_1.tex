@@ -1,0 +1,168 @@
+﻿\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{longtable}
+\geometry{margin=2.5cm}
+
+\title{Hito 1: Alcance y viabilidad (versión simple y alcanzable)}
+\author{Proyecto: Fugas de clientes en telecomunicaciones}
+\date{Febrero 2026}
+
+\begin{document}
+\maketitle
+
+\section{Objetivo del hito}
+Definir el problema de negocio, justificar una solución técnica viable y simple, estimar el valor económico con hipótesis conservadoras y planificar el trabajo.
+
+\section{Alcance y viabilidad}
+
+\subsection{Definición del problema de negocio (texto literal)}
+A continuación se detallan los escenarios de negocio propuestos para el desarrollo del proyecto práctico de la asignatura. Cada opción describe un problema real de la industria, cuantificando el impacto económico actual y la oportunidad de mejora mediante técnicas de big data. Leed atentamente las métricas y el contexto de cada caso antes de marcar vuestra elección definitiva, ya que este será el dominio sobre el que trabajaréis durante todo el ciclo de vida del proyecto.
+
+Fugas de clientes en telecomunicaciones.
+La operadora de telecomunicaciones gestiona una base de datos activa de 2.000.000 de clientes particulares en un mercado altamente saturado. Actualmente, la compañía se enfrenta a una tasa de rotación mensual del 3\% (60.000 clientes abandonan la compañía cada mes), una hemorragia que las campañas de fidelización genéricas no logran detener.
+
+Esta falta de inteligencia comercial genera un impacto negativo por dos vías. Por un lado, la incapacidad de anticiparse al descontento provoca la marcha de 40.000 usuarios recuperables cada mes (lo que implica que el sistema actual solo retiene o detecta a 1 de cada 3 fugas reales). Dado que el valor de vida promedio perdido por cliente se estima en 100 euros de margen neto anual, la compañía pierde una oportunidad de ingresos de 4.000.000 de euros mensuales.
+
+Por otro lado, la estrategia de retención indiscriminada ("café para todos") ofrece descuentos agresivos a clientes que no tenían intención real de irse. Actualmente, se regalan incentivos innecesarios al 5\% de la base leal (aproximadamente 100.000 clientes). Con un coste medio de 10 euros por descuento erróneo, se desperdician 1.000.000 de euros mensuales en recursos mal asignados. El balance total de pérdidas operativas asciende a 5.000.000 de euros al mes.
+
+\subsection{Planteamiento y selección de solución técnica}
+Se evalúan tres alternativas: heurística, ML en servidor único y Big Data distribuido.
+
+\begin{itemize}
+  \item Heurística: descartada por baja capacidad de mejora y alto mantenimiento manual.
+  \item ML en servidor único: descartada por límites de escalabilidad y trazabilidad.
+  \item Big Data distribuido: seleccionada en versión mínima viable y simple (batch, sin tiempo real).
+\end{itemize}
+
+\begin{longtable}{|p{5.4cm}|c|c|c|}
+\hline
+\textbf{Criterio} & \textbf{Heurística} & \textbf{ML monolítico} & \textbf{Big Data simple} \\
+\hline
+Escalabilidad & 1/5 & 2/5 & 5/5 \\
+\hline
+Mantenimiento & 2/5 & 3/5 & 4/5 \\
+\hline
+Trazabilidad & 2/5 & 2/5 & 5/5 \\
+\hline
+Puesta en marcha realista & 3/5 & 3/5 & 4/5 \\
+\hline
+\textbf{Total} & \textbf{8/20} & \textbf{10/20} & \textbf{18/20} \\
+\hline
+\end{longtable}
+
+\subsection{Evaluación de viabilidad y valor}
+
+\subsubsection{Viabilidad técnica}
+Viabilidad positiva por volumen de clientes, problema de clasificación estándar y posibilidad de ejecución por lotes con complejidad controlada.
+
+\subsubsection{Viabilidad económica (conservadora)}
+Pérdidas de partida:
+\begin{itemize}
+  \item Fugas recuperables: 4.000.000 EUR/mes.
+  \item Descuentos innecesarios: 1.000.000 EUR/mes.
+\end{itemize}
+
+Mejoras conservadoras:
+\begin{itemize}
+  \item 4\% de mejora en fugas recuperables: \(4.000.000 \times 0,04 = 160.000\) EUR/mes.
+  \item 5\% de mejora en descuentos innecesarios: \(1.000.000 \times 0,05 = 50.000\) EUR/mes.
+\end{itemize}
+
+Beneficio mensual estimado: \(210.000\) EUR/mes.
+
+Coste mensual estimado:
+\begin{itemize}
+  \item Equipo (2 personas): 10.000 EUR.
+  \item Infraestructura cloud: 1.100 EUR.
+  \item Total: 11.100 EUR.
+\end{itemize}
+
+ROI mensual:
+\[
+ROI = \frac{210.000 - 11.100}{11.100} \times 100 = 1.791,89\%
+\]
+
+Amortización aproximada:
+\[
+\frac{11.100}{210.000} \times 30 = 1,59 \text{ días}
+\]
+
+\subsubsection{Viabilidad ética y legal}
+Controles mínimos:
+\begin{itemize}
+  \item Seudonimización de identificadores.
+  \item Control de accesos por rol.
+  \item Registro de predicciones y decisiones.
+  \item Métrica de equidad recomendada: \textit{Equal Opportunity Difference}.
+\end{itemize}
+
+\subsection{Planificación y recursos}
+
+\textbf{KPIs de negocio iniciales}:
+\begin{itemize}
+  \item Reducir 4\% la pérdida por fugas recuperables.
+  \item Reducir 5\% el coste de descuentos innecesarios.
+\end{itemize}
+
+\textbf{Equipo (pareja)}:
+\begin{itemize}
+  \item Perfil 1: datos y pipeline.
+  \item Perfil 2: modelado y evaluación.
+\end{itemize}
+
+\textbf{Fuentes mínimas}:
+\begin{itemize}
+  \item Maestro de clientes.
+  \item Historial de churn.
+  \item Uso/facturación.
+  \item Historial de campañas.
+\end{itemize}
+
+\textbf{Stack simple}:
+Databricks, Delta Lake, Spark batch, Spark MLlib, MLflow y GitHub.
+
+\textbf{Hitos oficiales 2026}:
+\begin{itemize}
+  \item Hito 1: 27 de febrero.
+  \item Hito 2: 20 de marzo.
+  \item Hito 3: 17 de abril.
+  \item Hito 4: 1 de mayo.
+\end{itemize}
+
+\section{Diagramas Mermaid}
+\subsection*{Diagrama de decisión}
+\begin{verbatim}
+flowchart TD
+    A[Problema de fuga y descuentos ineficientes] --> B{Alternativas}
+    B --> C[Heurística]
+    B --> D[ML en servidor unico]
+    B --> E[Big Data simple en batch]
+    C --> C1[Descartada]
+    D --> D1[Descartada]
+    E --> E1[Seleccionada]
+\end{verbatim}
+
+\subsection*{Gantt oficial}
+\begin{verbatim}
+gantt
+    title Hitos oficiales del proyecto (2026)
+    dateFormat  YYYY-MM-DD
+    section Plan
+    Hito 1 Alcance y viabilidad        :done, h1, 2026-02-24, 2026-02-27
+    Hito 2 Datos                       :h2, 2026-02-28, 2026-03-20
+    Hito 3 Modelado                    :h3, 2026-03-21, 2026-04-17
+    Hito 4 Despliegue y monitorizacion :h4, 2026-04-18, 2026-05-01
+\end{verbatim}
+
+\section{Checklist de cumplimiento}
+\begin{itemize}
+  \item Problema literal incluido.
+  \item Tres alternativas técnicas evaluadas.
+  \item Viabilidad técnica, económica y ética.
+  \item KPIs, recursos y cronograma oficial.
+\end{itemize}
+
+\end{document}

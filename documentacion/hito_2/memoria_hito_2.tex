@@ -1,0 +1,46 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\title{Hito 2: Preparación y gestión de datos}
+\author{Plantilla}
+\date{Marzo 2026}
+
+\begin{document}
+\maketitle
+
+\section{Objetivo}
+Construir y validar la arquitectura de datos para el caso de churn.
+
+\section{Estructura de contenido}
+\begin{itemize}
+  \item Configuración de entorno y control de versiones.
+  \item Infraestructura de datos y gobernanza.
+  \item Capa bronze (ingesta y auditoría).
+  \item Capa silver (calidad, cuarentena, históricos).
+  \item Capa gold (features y tabla spine).
+  \item Ejecución del pipeline (Triggered/Continuous).
+  \item Evidencias y validaciones.
+\end{itemize}
+
+\section{Mermaid pendiente}
+\begin{verbatim}
+flowchart LR
+    A[Fuentes] --> B[Bronze]
+    B --> C[Silver]
+    C --> D[Gold]
+    D --> E[Feature Store]
+\end{verbatim}
+
+\section{Checklist}
+\begin{itemize}
+  \item Entorno colaborativo configurado.
+  \item Capas bronze/silver/gold documentadas.
+  \item Reglas de calidad y cuarentena justificadas.
+  \item Evidencias de recuentos y esquemas.
+\end{itemize}
+
+\end{document}

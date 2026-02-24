@@ -1,0 +1,44 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\title{Hito 4: Despliegue y monitorización}
+\author{Plantilla}
+\date{Mayo 2026}
+
+\begin{document}
+\maketitle
+
+\section{Objetivo}
+Desplegar la solución de churn y controlar su rendimiento técnico y de negocio.
+
+\section{Estructura}
+\begin{itemize}
+  \item Estrategia de despliegue y rollback.
+  \item Integración con sistemas operativos (CRM/campañas).
+  \item Monitorización técnica (rendimiento, drift, errores).
+  \item Monitorización de negocio (retención, ahorro, ROI).
+  \item Gobierno, privacidad y fairness en producción.
+\end{itemize}
+
+\section{Mermaid pendiente}
+\begin{verbatim}
+flowchart LR
+    A[Modelo registrado] --> B[Endpoint o batch scorer]
+    B --> C[CRM y campanas]
+    C --> D[Resultados negocio]
+    D --> E[Monitorizacion y alertas]
+    E --> F[Reentrenamiento]
+\end{verbatim}
+
+\section{Checklist}
+\begin{itemize}
+  \item Despliegue funcional.
+  \item Monitorización técnica y de negocio activa.
+  \item Plan de mejora continua y reentrenamiento.
+\end{itemize}
+
+\end{document}

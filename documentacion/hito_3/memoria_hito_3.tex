@@ -1,0 +1,44 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\title{Hito 3: Modelado y experimentación}
+\author{Plantilla}
+\date{Abril 2026}
+
+\begin{document}
+\maketitle
+
+\section{Objetivo}
+Entrenar, validar y seleccionar el modelo de churn.
+
+\section{Estructura}
+\begin{itemize}
+  \item Diseño experimental y particionado temporal.
+  \item Modelos baseline y candidatos avanzados.
+  \item Métricas técnicas y de negocio.
+  \item Fairness y robustez temporal.
+  \item Trazabilidad de experimentos.
+  \item Selección del modelo final.
+\end{itemize}
+
+\section{Mermaid pendiente}
+\begin{verbatim}
+flowchart LR
+    A[Features Gold] --> B[Train/Validation/Test]
+    B --> C[Experimentos MLflow]
+    C --> D[Modelo final]
+\end{verbatim}
+
+\section{Checklist}
+\begin{itemize}
+  \item Protocolo reproducible.
+  \item Métricas de negocio alineadas con ROI.
+  \item Fairness evaluada.
+  \item Modelo final registrado y versionado.
+\end{itemize}
+
+\end{document}
