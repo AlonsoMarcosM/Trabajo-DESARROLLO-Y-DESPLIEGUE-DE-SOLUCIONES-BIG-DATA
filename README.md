@@ -15,3 +15,10 @@ También se incluyen plantillas para:
 - `documentacion/hito_2/`
 - `documentacion/hito_3/`
 - `documentacion/hito_4/`
+
+## Código
+
+Estructura mínima para desarrollo en Databricks:
+
+- `codigo/README.md`
+- `codigo/data_generator/generate.py`

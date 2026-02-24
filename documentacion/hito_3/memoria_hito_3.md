@@ -1,5 +1,15 @@
 # Hito 3: Modelado y experimentación
 
+## Datos de la entrega
+
+- Asignatura: **DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA**
+- Máster: **Máster Universitario en Big Data y Computación en la Nube**
+- Curso académico: **2025-2026**
+- Integrantes:
+- **Alonso Marcos Muñoz** (`Alonso.Marcos@alu.uclm.es`)
+- **JBJOSE Barros Ribademar** (`Jose.Barros1@alu.uclm.es`)
+- Fecha de edición de plantilla: **febrero de 2026**
+
 ## 1. Objetivo
 
 Entrenar, validar y seleccionar el modelo de churn alineado con los KPIs de negocio.

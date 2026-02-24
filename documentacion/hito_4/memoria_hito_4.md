@@ -1,5 +1,15 @@
 # Hito 4: Despliegue y monitorización
 
+## Datos de la entrega
+
+- Asignatura: **DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA**
+- Máster: **Máster Universitario en Big Data y Computación en la Nube**
+- Curso académico: **2025-2026**
+- Integrantes:
+- **Alonso Marcos Muñoz** (`Alonso.Marcos@alu.uclm.es`)
+- **JBJOSE Barros Ribademar** (`Jose.Barros1@alu.uclm.es`)
+- Fecha de edición de plantilla: **febrero de 2026**
+
 ## 1. Objetivo
 
 Poner en producción la solución de churn y definir monitorización técnica y de negocio.

@@ -1,5 +1,15 @@
 # Hito 2: Preparación y gestión de datos
 
+## Datos de la entrega
+
+- Asignatura: **DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA**
+- Máster: **Máster Universitario en Big Data y Computación en la Nube**
+- Curso académico: **2025-2026**
+- Integrantes:
+- **Alonso Marcos Muñoz** (`Alonso.Marcos@alu.uclm.es`)
+- **JBJOSE Barros Ribademar** (`Jose.Barros1@alu.uclm.es`)
+- Fecha de edición de plantilla: **febrero de 2026**
+
 ## 1. Objetivo
 
 Construir y validar la arquitectura de datos para soportar el modelado del churn, siguiendo la guía del proyecto.

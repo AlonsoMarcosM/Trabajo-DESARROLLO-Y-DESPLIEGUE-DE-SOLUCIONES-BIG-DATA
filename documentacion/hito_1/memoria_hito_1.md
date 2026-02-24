@@ -1,5 +1,15 @@
 ﻿# Hito 1: Alcance y viabilidad (versión simple y alcanzable)
 
+## Datos de la entrega
+
+- Asignatura: **DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA**
+- Máster: **Máster Universitario en Big Data y Computación en la Nube**
+- Curso académico: **2025-2026**
+- Integrantes:
+- **Alonso Marcos Muñoz** (`Alonso.Marcos@alu.uclm.es`)
+- **JBJOSE Barros Ribademar** (`Jose.Barros1@alu.uclm.es`)
+- Fecha de edición: **febrero de 2026**
+
 ## 1. Objetivo del hito
 
 Definir el problema de negocio, justificar una solución técnica viable y simple, estimar el valor económico con hipótesis conservadoras, y dejar una planificación clara para los hitos siguientes.
