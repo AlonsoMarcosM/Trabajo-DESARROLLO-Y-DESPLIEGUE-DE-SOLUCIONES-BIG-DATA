@@ -4,11 +4,12 @@
 \usepackage[spanish]{babel}
 \usepackage{geometry}
 \usepackage{longtable}
+\usepackage{array}
 \geometry{margin=2.5cm}
 
-\title{Hito 1: Alcance y viabilidad (versión simple y alcanzable)}
+\title{Hito 1: Alcance y viabilidad}
 \author{Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es}) \\ JBJOSE Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})}
-\date{Febrero 2026}
+\date{Febrero de 2026}
 
 \begin{document}
 \maketitle
@@ -20,8 +21,8 @@
   \item Curso académico: 2025-2026.
 \end{itemize}
 
-\section{Objetivo del hito}
-Definir el problema de negocio, justificar una solución técnica viable y simple, estimar el valor económico con hipótesis conservadoras y planificar el trabajo.
+\section{Introducción del hito}
+Este hito define el alcance de negocio y valida la viabilidad antes de iniciar implementación técnica. La propuesta está planteada con enfoque realista para febrero de 2026: una primera versión funcional, medible y defendible, sin sobredimensionar arquitectura ni prometer mejoras difíciles de sostener.
 
 \section{Alcance y viabilidad}
 
@@ -35,141 +36,124 @@ Esta falta de inteligencia comercial genera un impacto negativo por dos vías. P
 
 Por otro lado, la estrategia de retención indiscriminada ("café para todos") ofrece descuentos agresivos a clientes que no tenían intención real de irse. Actualmente, se regalan incentivos innecesarios al 5\% de la base leal (aproximadamente 100.000 clientes). Con un coste medio de 10 euros por descuento erróneo, se desperdician 1.000.000 de euros mensuales en recursos mal asignados. El balance total de pérdidas operativas asciende a 5.000.000 de euros al mes.
 
-\subsection{Planteamiento y selección de solución técnica}
-Se evalúan tres alternativas: heurística, ML en servidor único y Big Data distribuido.
+\subsection{Planteamiento y selección de la solución técnica}
+Se evaluaron tres alternativas: reglas heurísticas, ML en servidor monolítico y arquitectura big data distribuida.
 
-\begin{itemize}
-  \item Heurística: descartada por baja capacidad de mejora y alto mantenimiento manual.
-  \item ML en servidor único: descartada por límites de escalabilidad y trazabilidad.
-  \item Big Data distribuido: seleccionada en versión mínima viable y simple (batch, sin tiempo real).
-\end{itemize}
-
-\begin{longtable}{|p{5.4cm}|c|c|c|}
+\begin{longtable}{|p{5.2cm}|p{2.1cm}|p{2.1cm}|p{3.0cm}|}
 \hline
-\textbf{Criterio} & \textbf{Heurística} & \textbf{ML monolítico} & \textbf{Big Data simple} \\
+\textbf{Criterio} & \textbf{Heurística} & \textbf{ML monolítico} & \textbf{Big Data distribuido} \\
 \hline
-Escalabilidad & 1/5 & 2/5 & 5/5 \\
+Escalabilidad con 2M clientes & Baja & Media & Alta \\
 \hline
-Mantenimiento & 2/5 & 3/5 & 4/5 \\
+Mantenimiento operativo & Alto & Medio & Medio \\
 \hline
-Trazabilidad & 2/5 & 2/5 & 5/5 \\
+Integración de nuevas señales & Baja & Media & Alta \\
 \hline
-Puesta en marcha realista & 3/5 & 3/5 & 4/5 \\
+Trazabilidad para auditoría & Baja & Media & Alta \\
 \hline
-\textbf{Total} & \textbf{8/20} & \textbf{10/20} & \textbf{18/20} \\
+Riesgo de obsolescencia & Alto & Medio & Bajo \\
 \hline
 \end{longtable}
 
-\subsection{Evaluación de viabilidad y valor}
+La opción heurística se descarta por baja precisión y alta carga manual. El enfoque monolítico mejora parcialmente, pero limita escalabilidad y evolución. Se selecciona big data en versión mínima viable: procesamiento por lotes, modelo base y mejora incremental en hitos siguientes.
+
+\subsection{Evaluación de la viabilidad y valor}
 
 \subsubsection{Viabilidad técnica}
-Viabilidad positiva por volumen de clientes, problema de clasificación estándar y posibilidad de ejecución por lotes con complejidad controlada.
+La viabilidad técnica es positiva por volumen de clientes, naturaleza clasificatoria del problema y disponibilidad esperada de variables predictivas (perfil, uso, incidencias, facturación y campañas). Además, el arranque batch reduce riesgo de implementación y mantiene la complejidad dentro de un marco alcanzable para trabajo en pareja.
 
-\subsubsection{Viabilidad económica (conservadora)}
+\subsubsection{Viabilidad económica (escenario conservador)}
 Pérdidas de partida:
 \begin{itemize}
-  \item Fugas recuperables: 4.000.000 EUR/mes.
-  \item Descuentos innecesarios: 1.000.000 EUR/mes.
+  \item Fugas recuperables no evitadas: 4.000.000 EUR/mes.
+  \item Incentivos mal asignados: 1.000.000 EUR/mes.
 \end{itemize}
 
-Mejoras conservadoras:
+Hipótesis conservadoras de mejora del MVP:
 \begin{itemize}
-  \item 4\% de mejora en fugas recuperables: \(4.000.000 \times 0,04 = 160.000\) EUR/mes.
-  \item 5\% de mejora en descuentos innecesarios: \(1.000.000 \times 0,05 = 50.000\) EUR/mes.
+  \item 4\% de reducción en fuga recuperable: \(4.000.000 \times 0,04 = 160.000\) EUR/mes.
+  \item 5\% de reducción en incentivos innecesarios: \(1.000.000 \times 0,05 = 50.000\) EUR/mes.
 \end{itemize}
 
 Beneficio mensual estimado: \(210.000\) EUR/mes.
 
-Coste mensual estimado:
+Costes mensuales estimados:
 \begin{itemize}
-  \item Equipo (2 personas): 10.000 EUR.
+  \item Equipo técnico (2 personas): 10.000 EUR.
   \item Infraestructura cloud: 1.100 EUR.
-  \item Total: 11.100 EUR.
+  \item Coste total: 11.100 EUR.
 \end{itemize}
 
-ROI mensual:
 \[
 ROI = \frac{210.000 - 11.100}{11.100} \times 100 = 1.791,89\%
 \]
 
-Amortización aproximada:
 \[
-\frac{11.100}{210.000} \times 30 = 1,59 \text{ días}
+Payback \approx \frac{11.100}{210.000} \times 30 = 1,59\ \text{días}
 \]
 
+Incluso en este escenario prudente, la propuesta se mantiene claramente rentable.
+
 \subsubsection{Viabilidad ética y legal}
-Controles mínimos:
+La propuesta incorpora salvaguardas desde el diseño:
 \begin{itemize}
-  \item Seudonimización de identificadores.
-  \item Control de accesos por rol.
-  \item Registro de predicciones y decisiones.
-  \item Métrica de equidad recomendada: \textit{Equal Opportunity Difference}.
+  \item Seudonimización de identificadores y control de acceso por roles.
+  \item Trazabilidad de datos, modelos y ejecuciones para auditoría.
+  \item Seguimiento de sesgo con \textit{Equal Opportunity Difference} (comparación de TPR entre grupos).
 \end{itemize}
 
 \subsection{Planificación y recursos}
 
-\textbf{KPIs de negocio iniciales}:
+\subsubsection{KPIs de negocio y traducción técnica}
+Compromisos iniciales del MVP:
 \begin{itemize}
-  \item Reducir 4\% la pérdida por fugas recuperables.
+  \item Reducir 4\% la pérdida por fuga recuperable.
   \item Reducir 5\% el coste de descuentos innecesarios.
 \end{itemize}
 
-\textbf{Equipo (pareja)}:
+Traducción operativa:
 \begin{itemize}
-  \item Perfil 1: datos y pipeline.
-  \item Perfil 2: modelado y evaluación.
+  \item Fuga recuperable no evitada: de 40.000 a 38.400 clientes/mes.
+  \item Incentivos mal asignados: de 100.000 a 95.000 clientes/mes.
 \end{itemize}
 
-\textbf{Fuentes mínimas}:
-\begin{itemize}
-  \item Maestro de clientes.
-  \item Historial de churn.
-  \item Uso/facturación.
-  \item Historial de campañas.
-\end{itemize}
+\subsubsection{Equipo y stack}
+El proyecto se ejecuta en pareja con reparto funcional: perfil de datos/MLOps y perfil de modelado/evaluación. El stack adoptado para la primera iteración es Databricks, Delta Lake, Spark batch, Spark MLlib, MLflow y GitHub.
 
-\textbf{Stack simple}:
-Databricks, Delta Lake, Spark batch, Spark MLlib, MLflow y GitHub.
-
-\textbf{Hitos oficiales 2026}:
+\subsubsection{Cronograma oficial}
 \begin{itemize}
-  \item Hito 1: 27 de febrero.
-  \item Hito 2: 20 de marzo.
-  \item Hito 3: 17 de abril.
-  \item Hito 4: 1 de mayo.
+  \item Hito 1 (Alcance y viabilidad): 27 de febrero de 2026.
+  \item Hito 2 (Preparación y gestión de datos): 20 de marzo de 2026.
+  \item Hito 3 (Modelado y experimentación): 17 de abril de 2026.
+  \item Hito 4 (Despliegue y monitorización): 1 de mayo de 2026.
 \end{itemize}
 
 \section{Diagramas Mermaid}
 \subsection*{Diagrama de decisión}
 \begin{verbatim}
 flowchart TD
-    A[Problema de fuga y descuentos ineficientes] --> B{Alternativas}
-    B --> C[Heurística]
+    A[Problema de negocio: fuga + descuentos ineficientes] --> B{Alternativas}
+    B --> C[Reglas heuristicas]
     B --> D[ML en servidor unico]
-    B --> E[Big Data simple en batch]
-    C --> C1[Descartada]
-    D --> D1[Descartada]
-    E --> E1[Seleccionada]
+    B --> E[Big Data distribuido]
+    C --> C1[Descartada: baja precision y alta carga manual]
+    D --> D1[Descartada: escalabilidad y trazabilidad limitadas]
+    E --> E1[Seleccionada: MVP viable y ampliable]
 \end{verbatim}
 
-\subsection*{Gantt oficial}
+\subsection*{Cronograma}
 \begin{verbatim}
 gantt
     title Hitos oficiales del proyecto (2026)
     dateFormat  YYYY-MM-DD
-    section Plan
+    section Plan de trabajo
     Hito 1 Alcance y viabilidad        :done, h1, 2026-02-24, 2026-02-27
-    Hito 2 Datos                       :h2, 2026-02-28, 2026-03-20
-    Hito 3 Modelado                    :h3, 2026-03-21, 2026-04-17
+    Hito 2 Preparacion y gestion datos :h2, 2026-02-28, 2026-03-20
+    Hito 3 Modelado y experimentacion  :h3, 2026-03-21, 2026-04-17
     Hito 4 Despliegue y monitorizacion :h4, 2026-04-18, 2026-05-01
 \end{verbatim}
 
-\section{Checklist de cumplimiento}
-\begin{itemize}
-  \item Problema literal incluido.
-  \item Tres alternativas técnicas evaluadas.
-  \item Viabilidad técnica, económica y ética.
-  \item KPIs, recursos y cronograma oficial.
-\end{itemize}
+\section{Cierre del hito}
+El alcance queda formalizado con profundidad suficiente para esta fase: problema bien definido, solución razonada, viabilidad integral y hoja de ruta concreta. La siguiente etapa consiste en materializar esta base en el hito 2, validando calidad de datos y consolidando la arquitectura de trabajo en Databricks.
 
 \end{document}
