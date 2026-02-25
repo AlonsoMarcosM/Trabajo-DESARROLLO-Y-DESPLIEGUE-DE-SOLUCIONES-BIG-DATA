@@ -1,176 +1,230 @@
-﻿# Hito 1: Alcance y viabilidad
+﻿\documentclass[12pt,a4paper]{article}
 
-## Datos de la entrega
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{longtable}
+\geometry{margin=2.5cm}
 
-- Asignatura: **DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA**
-- Máster: **Máster Universitario en Big Data y Computación en la Nube**
-- Curso académico: **2025-2026**
-- Integrantes:
-- **Alonso Marcos Muñoz** (`Alonso.Marcos@alu.uclm.es`)
-- **Jose Barros Ribademar** (`Jose.Barros1@alu.uclm.es`)
-- Fecha de elaboración: **febrero de 2026**
+\title{\textbf{Hito 1: Alcance y viabilidad}}
+\author{
+\textbf{Asignatura:} Desarrollo y Despliegue de Soluciones Big Data \\
+\textbf{Máster:} Máster Universitario en Big Data y Computación en la Nube \\
+\textbf{Curso académico:} 2025--2026 \\
+\\
+Alonso Marcos Muñoz \\
+\texttt{Alonso.Marcos@alu.uclm.es} \\
+\\
+Jose Barros Ribademar \\
+\texttt{Jose.Barros1@alu.uclm.es}
+}
+\date{Febrero de 2026}
 
-## 1. Introducción del hito
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section*{Datos de la entrega}
+
+\begin{itemize}
+    \item Asignatura: \textbf{DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA}
+    \item Máster: \textbf{Máster Universitario en Big Data y Computación en la Nube}
+    \item Curso académico: 2025--2026
+    \item Integrantes:
+    \begin{itemize}
+        \item Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es})
+        \item Jose Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})
+    \end{itemize}
+    \item Fecha de elaboración: febrero de 2026
+\end{itemize}
+
+\section{Introducción del hito}
 
 Este primer hito cierra el alcance del proyecto antes de entrar en la fase técnica de implementación. El objetivo no es solo describir el problema de negocio, sino justificar por qué tiene sentido abordarlo con una solución de datos, qué valor económico realista puede aportar y cómo se va a ejecutar con recursos limitados, en el calendario oficial de la asignatura.
 
 La propuesta se ha redactado con un enfoque deliberadamente alcanzable: empezar con una primera versión funcional (MVP) y evitar compromisos técnicos innecesarios para una entrega inicial. Esta decisión mantiene el equilibrio entre rigor académico, viabilidad de ejecución en pareja y potencial de mejora en los hitos siguientes.
 
-Fecha oficial de cierre del hito: **27 de febrero de 2026**.
+Fecha oficial de cierre del hito: \textbf{27 de febrero de 2026}.
 
-## 2. Alcance y viabilidad
+\section{Alcance y viabilidad}
 
-### 2.1 Definición del problema de negocio (texto literal asignado)
+\subsection{Definición del problema de negocio}
 
-A continuación se detallan los escenarios de negocio propuestos para el desarrollo del proyecto práctico de la asignatura. Cada opción describe un problema real de la industria, cuantificando el impacto económico actual y la oportunidad de mejora mediante técnicas de big data. Leed atentamente las métricas y el contexto de cada caso antes de marcar vuestra elección definitiva, ya que este será el dominio sobre el que trabajaréis durante todo el ciclo de vida del proyecto.
+La operadora de telecomunicaciones gestiona una base de datos activa de 2.000.000 de clientes particulares en un mercado altamente saturado. Actualmente, la compañía se enfrenta a una tasa de rotación mensual del 3\% (60.000 clientes abandonan la compañía cada mes), una hemorragia que las campañas de fidelización genéricas no logran detener.
 
-Fugas de clientes en telecomunicaciones
-La operadora de telecomunicaciones gestiona una base de datos activa de 2.000.000 de clientes particulares en un mercado altamente saturado. Actualmente, la compañía se enfrenta a una tasa de rotación mensual del 3% (60.000 clientes abandonan la compañía cada mes), una hemorragia que las campañas de fidelización genéricas no logran detener.
+Esta falta de inteligencia comercial genera un impacto negativo por dos vías:
 
-Esta falta de inteligencia comercial genera un impacto negativo por dos vías. Por un lado, la incapacidad de anticiparse al descontento provoca la marcha de 40.000 usuarios recuperables cada mes (lo que implica que el sistema actual solo retiene o detecta a 1 de cada 3 fugas reales). Dado que el valor de vida promedio perdido por cliente se estima en 100 euros de margen neto anual, la compañía pierde una oportunidad de ingresos de 4.000.000 de euros mensuales.
+\begin{itemize}
+    \item \textbf{Fugas recuperables no evitadas}: 40.000 usuarios recuperables abandonan la compañía cada mes.  
+    Con un valor de vida promedio perdido por cliente de 100 euros de margen neto anual:
 
-Por otro lado, la estrategia de retención indiscriminada ("café para todos") ofrece descuentos agresivos a clientes que no tenían intención real de irse. Actualmente, se regalan incentivos innecesarios al 5% de la base leal (aproximadamente 100.000 clientes). Con un coste medio de 10 euros por descuento erróneo, se desperdician 1.000.000 de euros mensuales en recursos mal asignados. El balance total de pérdidas operativas asciende a 5.000.000 de euros al mes.
+    \[
+    40.000 \times 100 = 4.000.000 \text{ EUR/mes}
+    \]
 
-### 2.2 Planteamiento y selección de la solución técnica
+    \item \textbf{Incentivos mal asignados}: descuentos ofrecidos al 5\% de la base leal (100.000 clientes).  
+    Con coste medio de 10 euros por descuento:
 
-Siguiendo la guía del proyecto, se analizaron tres escenarios: (1) heurístico por reglas, (2) machine learning en servidor monolítico y (3) arquitectura big data distribuida. La comparación no se centró en “usar la tecnología más avanzada”, sino en elegir la alternativa que mejor responde al problema de churn con coste y complejidad controlados.
+    \[
+    100.000 \times 10 = 1.000.000 \text{ EUR/mes}
+    \]
+\end{itemize}
 
-| Criterio de decisión | Solución heurística | ML monolítico | Big Data distribuido (MVP) |
-|---|---|---|---|
-| Escalabilidad con 2M clientes y crecimiento histórico | Baja | Media | Alta |
-| Esfuerzo de mantenimiento operativo | Alto | Medio | Medio |
-| Capacidad para integrar nuevas fuentes y features | Baja | Media | Alta |
-| Trazabilidad para auditoría y defensa | Baja | Media | Alta |
-| Riesgo de obsolescencia a medio plazo | Alto | Medio | Bajo |
+Pérdida total operativa:
 
-La opción heurística se descarta porque no corrige el problema estructural: campañas masivas con baja precisión. El modelo monolítico mejora la situación, pero limita la evolución del proyecto cuando aumenten volumen y complejidad de datos. Por ese motivo se selecciona una arquitectura big data, pero en una versión mínima viable: procesamiento por lotes, primer modelo de clasificación y ciclo de mejora incremental en los hitos 2 y 3.
+\[
+4.000.000 + 1.000.000 = 5.000.000 \text{ EUR/mes}
+\]
 
-```mermaid
-flowchart TD
-    A[Problema de negocio: fuga + descuentos ineficientes] --> B{Alternativas}
-    B --> C[Reglas heuristicas]
-    B --> D[ML en servidor unico]
-    B --> E[Big Data distribuido]
-    C --> C1[Descartada: baja precision y alta carga manual]
-    D --> D1[Descartada: escalabilidad y trazabilidad limitadas]
-    E --> E1[Seleccionada: MVP viable y ampliable]
-```
+\subsection{Planteamiento y selección de la solución técnica}
 
-### 2.3 Evaluación de la viabilidad y valor
+Se compararon tres alternativas: heurística por reglas, ML en servidor monolítico y arquitectura big data distribuida.
 
-#### 2.3.1 Viabilidad técnica
+\begin{longtable}{p{4cm}p{2.5cm}p{2.5cm}p{3cm}}
+\toprule
+\textbf{Criterio de decisión} & \textbf{Heurística} & \textbf{ML monolítico} & \textbf{Big Data (MVP)} \\
+\midrule
+Escalabilidad con 2M clientes & Baja & Media & Alta \\
+Esfuerzo de mantenimiento & Alto & Medio & Medio \\
+Integración de nuevas fuentes & Baja & Media & Alta \\
+Trazabilidad & Baja & Media & Alta \\
+Riesgo de obsolescencia & Alto & Medio & Bajo \\
+\bottomrule
+\end{longtable}
 
-La viabilidad técnica es favorable por cuatro razones. Primero, el caso tiene suficiente masa crítica (2 millones de clientes activos) para justificar un enfoque de datos. Segundo, la variable objetivo (churn) es natural en un problema de clasificación supervisada. Tercero, el dominio permite construir señales predictivas razonables (antigüedad, uso de servicios, incidencias, facturación e interacción con campañas). Cuarto, el diseño por lotes reduce riesgo de implementación al inicio y permite entregar resultados medibles sin exigir tiempo real.
+Se selecciona \textbf{Big Data distribuido} en versión mínima viable (MVP).
 
-Tal como indica la guía, el detalle exacto de volumen de tablas, años de histórico y cardinalidades quedará fijado definitivamente al recibir y perfilar el dataset de trabajo en el hito 2. En este hito se valida la factibilidad conceptual y operativa.
+\subsection{Evaluación de la viabilidad y valor}
 
-#### 2.3.2 Viabilidad económica (escenario conservador)
+\subsubsection{Viabilidad técnica}
 
-Se parte de las pérdidas mensuales declaradas en el enunciado:
+\begin{enumerate}
+    \item Masa crítica suficiente (2 millones de clientes activos).
+    \item Problema de clasificación supervisada natural.
+    \item Señales predictivas razonables: antigüedad, uso de servicios, incidencias, facturación, interacción con campañas.
+    \item Diseño batch que reduce riesgo de implementación inicial.
+\end{enumerate}
 
-- Fugas recuperables no evitadas: **4.000.000 EUR/mes**.
-- Incentivos mal asignados: **1.000.000 EUR/mes**.
+\subsubsection{Viabilidad económica (escenario conservador)}
 
-Para no sobreprometer resultados, el escenario económico del MVP usa mejoras moderadas:
+Pérdidas mensuales declaradas:
 
-- Reducción del 4% en fuga recuperable: `4.000.000 x 0,04 = 160.000 EUR/mes`.
-- Reducción del 5% en descuentos innecesarios: `1.000.000 x 0,05 = 50.000 EUR/mes`.
+\begin{itemize}
+    \item Fugas recuperables: 4.000.000 EUR/mes
+    \item Incentivos mal asignados: 1.000.000 EUR/mes
+\end{itemize}
 
-Beneficio total estimado: `210.000 EUR/mes`.
+Escenario MVP:
 
-Coste mensual estimado (alineado con una puesta en marcha académica y de bajo riesgo):
+\begin{itemize}
+    \item Reducción 5\% fuga recuperable: $4.000.000 \times 0,05 = 200.000$ EUR/mes
+    \item Reducción 5\% descuentos innecesarios: $1.000.000 \times 0,05 = 50.000$ EUR/mes
+\end{itemize}
 
-- Equipo técnico (2 personas): `10.000 EUR/mes`.
-- Infraestructura cloud: `1.100 EUR/mes`.
+\[
+\text{Beneficio total} = 200.000 + 50.000 = 250.000 \text{ EUR/mes}
+\]
 
-Coste total estimado: `11.100 EUR/mes`.
+Costes:
 
-Con estas hipótesis:
+\begin{itemize}
+    \item Equipo técnico: 10.000 EUR/mes
+    \item Infraestructura cloud: 1.100 EUR/mes
+\end{itemize}
 
-- ROI mensual: `((210.000 - 11.100) / 11.100) x 100 = 1.791,89%`.
-- Payback aproximado: `(11.100 / 210.000) x 30 = 1,59 días`.
+\[
+\text{Coste total} = 10.000 + 1.100 = 11.100 \text{ EUR/mes}
+\]
 
-La lectura de negocio es clara: incluso en un escenario prudente, el proyecto tiene margen económico suficiente para justificar su ejecución y mejora progresiva.
+\[
+\text{ROI} = \left(\frac{250.000 - 11.100}{11.100}\right)\times 100 = 2152\%
+\]
 
-#### 2.3.3 Viabilidad ética y legal
+\[
+\text{Payback} = \frac{11.100}{250.000}\times 30 = 1,3 \text{ días}
+\]
 
-La viabilidad no depende solo del ROI. El diseño debe ser técnicamente útil, económicamente rentable y éticamente defendible. Para ello se establecen tres medidas desde el inicio:
+\subsubsection{Viabilidad ética y legal}
 
-1. Protección de datos personales mediante seudonimización y control de accesos por rol.
-2. Trazabilidad de decisiones (versionado de datasets, modelos y ejecuciones de scoring).
-3. Seguimiento de sesgo con una métrica explícita de fairness: **Equal Opportunity Difference** (comparación de TPR entre grupos).
+\begin{enumerate}
+    \item Seudonimización y control de accesos.
+    \item Trazabilidad de datasets y modelos.
+    \item Métrica de fairness: Equal Opportunity Difference.
+\end{enumerate}
 
-El objetivo en esta fase no es “resolver fairness al 100%”, sino prevenir riesgos desde el diseño para no trasladar deuda ética al final del proyecto.
+\subsection{Planificación y recursos}
 
-### 2.4 Planificación y recursos
+\subsubsection{KPIs de negocio y traducción técnica}
 
-#### 2.4.1 KPIs de negocio y traducción técnica
+\begin{itemize}
+    \item Reducir en 5\% la pérdida por fuga recuperable.
+    \item Reducir en 5\% el coste por incentivos innecesarios.
+\end{itemize}
 
-Los objetivos del MVP se han ajustado para que sean exigentes pero alcanzables:
-
-- Reducir en 4% la pérdida por fuga recuperable.
-- Reducir en 5% el coste por incentivos innecesarios.
+Estudios de referencia: \url{https://medium.com/%40avk8923/case-2-out-of-15-7fa38feff88c}
 
 Traducción a magnitudes operativas:
 
-- Fuga recuperable no evitada: pasar de 40.000 a 38.400 clientes/mes.
-- Incentivos mal asignados: pasar de 100.000 a 95.000 clientes/mes.
+\begin{itemize}
+    \item Fuga recuperable: 40.000 → 38.000 clientes/mes
+    \item Incentivos mal asignados: 100.000 → 95.000 clientes/mes
+\end{itemize}
 
-Traducción a metas técnicas iniciales:
+Metas técnicas iniciales:
 
-- Mejorar la detección efectiva sobre clientes con riesgo real de baja.
-- Incrementar la precisión de campañas para evitar descuentos a clientes que no iban a abandonar.
-- Priorizar estabilidad del pipeline y reproducibilidad de resultados frente a optimización agresiva en la primera iteración.
+\begin{itemize}
+    \item Mejorar detección de clientes con riesgo real de baja
+    \item Incrementar precisión de campañas evitando descuentos innecesarios
+    \item Priorizar estabilidad y reproducibilidad frente a optimización agresiva
+\end{itemize}
 
-#### 2.4.2 Equipo de trabajo
+\subsubsection{Equipo de trabajo}
 
-El proyecto se desarrolla en pareja con reparto funcional sencillo:
+\begin{itemize}
+    \item Ingeniería de datos/MLOps: ingesta, calidad de datos, orquestación y ejecución
+    \item Modelado: construcción de variables, entrenamiento, evaluación y análisis de error
+\end{itemize}
 
-- Perfil de ingeniería de datos/MLOps: ingesta, calidad de datos, orquestación y ejecución en plataforma.
-- Perfil de modelado: construcción de variables, entrenamiento, evaluación y análisis de error.
+\subsubsection{Fuentes y stack tecnológico}
 
-Ambos integrantes participan en definición de decisiones, memoria y defensa, para mantener autoría compartida y coherencia técnica.
+Fuentes mínimas:
 
-#### 2.4.3 Fuentes y stack tecnológico
+\begin{itemize}
+    \item Maestro de clientes
+    \item Histórico de bajas/churn
+    \item Uso de servicios y facturación
+    \item Histórico de campañas y respuesta
+\end{itemize}
 
-Fuentes mínimas previstas para primera versión:
+Stack tecnológico:
 
-- Maestro de clientes.
-- Histórico de bajas/churn.
-- Uso de servicios y facturación.
-- Histórico de campañas y respuesta.
+\begin{itemize}
+    \item Databricks + Delta Lake
+    \item Spark (batch)
+    \item Spark MLlib
+    \item MLflow
+    \item GitHub
+\end{itemize}
 
-Stack adoptado para el MVP:
+\subsubsection{Cronograma oficial del proyecto}
 
-- Databricks + Delta Lake (almacenamiento y procesamiento).
-- Spark en modo batch para transformación y entrenamiento.
-- Spark MLlib para modelo base.
-- MLflow para trazabilidad de experimentos.
-- GitHub para control de versiones.
+\begin{itemize}
+    \item Hito 1: Alcance y viabilidad – 24/02/2026 a 27/02/2026
+    \item Hito 2: Preparación y gestión de datos – 28/02/2026 a 20/03/2026
+    \item Hito 3: Modelado y experimentación – 21/03/2026 a 17/04/2026
+    \item Hito 4: Despliegue y monitorización – 18/04/2026 a 01/05/2026
+\end{itemize}
 
-```mermaid
-flowchart LR
-    A[Datos cliente y uso] --> B[Ingesta batch]
-    B --> C[Limpieza y consolidacion]
-    C --> D[Dataset de entrenamiento]
-    D --> E[Modelo churn v1]
-    E --> F[Segmentacion de campanas]
-    F --> G[Resultado de negocio y feedback]
-```
+\section{Cierre del hito}
 
-#### 2.4.4 Cronograma oficial del proyecto
+El alcance queda cerrado con una propuesta coherente en las cuatro dimensiones exigidas: definición del problema, selección técnica razonada, viabilidad completa y planificación.
 
-```mermaid
-gantt
-    title Hitos oficiales del proyecto (2026)
-    dateFormat  YYYY-MM-DD
-    section Plan de trabajo
-    Hito 1 Alcance y viabilidad        :done, h1, 2026-02-24, 2026-02-27
-    Hito 2 Preparacion y gestion datos :h2, 2026-02-28, 2026-03-20
-    Hito 3 Modelado y experimentacion  :h3, 2026-03-21, 2026-04-17
-    Hito 4 Despliegue y monitorizacion :h4, 2026-04-18, 2026-05-01
-```
+La estrategia adoptada evita promesas difíciles de sostener y prioriza una entrega sólida, medible y defendible. El siguiente paso es ejecutar el hito 2 para validar calidad del dato y materializar la arquitectura en Databricks.
 
-## 3. Cierre del hito
-
-El alcance queda cerrado con una propuesta coherente en las cuatro dimensiones exigidas por la guía: definición del problema, selección técnica razonada, viabilidad completa y planificación. La estrategia adoptada evita promesas difíciles de sostener en febrero de 2026 y prioriza una entrega sólida, medible y defendible. Sobre esta base, el siguiente paso natural es ejecutar el hito 2 para validar calidad del dato y materializar la arquitectura de trabajo en Databricks.
+\end{document}
