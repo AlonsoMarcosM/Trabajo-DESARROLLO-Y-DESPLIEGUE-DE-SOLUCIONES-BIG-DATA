@@ -1,17 +1,22 @@
-# Estructura mínima de código
+# Codigo del proyecto
 
-Esta carpeta está preparada para trabajar en Databricks con una base simple.
+Esta carpeta contiene el codigo fuente del proyecto con la misma estructura de directorios del ejemplo del profesor, pero sin reutilizar sus archivos.
 
-## Estructura
+## Estructura objetivo
 
-- `data_generator/generate.py`: script generador de datos proporcionado por el profesor.
-- `databricks/notebooks/`: notebooks del proyecto.
-- `databricks/pipelines/`: definiciones de pipelines (DLT u otros).
-- `src/`: utilidades Python compartidas.
+- `.vscode/`
+- `notebooks/`
+- `resources/`
+- `src/medallion_pipeline/`
+  - `explorations/`
+  - `rules/`
+  - `transformations/`
+  - `utilities/`
 
-## Flujo recomendado
+## Generacion de datos
 
-1. Ejecutar `data_generator/generate.py` para generar el dataset base.
-2. Subir/ingestar esos datos en Databricks.
-3. Desarrollar transformación y modelado en `databricks/notebooks/`.
-4. Versionar cambios de notebooks y utilidades en este repositorio.
+Uno de los generadores de datos del proyecto es:
+
+- `F:/DISCO DURO PORTABLE/INGENIERIA/MASTER/14/DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA/trabajo/generate.py`
+
+Ese script crea datos sinteticos en las rutas `context/`, `events/` y `source_buffer/` en su carpeta de ejecucion.

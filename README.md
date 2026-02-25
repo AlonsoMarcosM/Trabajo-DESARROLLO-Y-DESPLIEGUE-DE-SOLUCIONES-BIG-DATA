@@ -1,24 +1,24 @@
 # Trabajo DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA
 
-Repositorio de trabajo del proyecto práctico de la asignatura.
+Repositorio de trabajo del proyecto practico de la asignatura.
 
-## Documentación
-
-La documentación completa está en:
+## Documentacion
 
 - `documentacion/README.md`
 - `documentacion/hito_1/memoria_hito_1.md`
 - `documentacion/hito_1/memoria_hito_1.tex`
 
-También se incluyen plantillas para:
+## Codigo
 
-- `documentacion/hito_2/`
-- `documentacion/hito_3/`
-- `documentacion/hito_4/`
+La carpeta `codigo/` mantiene la misma estructura de directorios del ejemplo del profesor, pero vacia para desarrollo propio:
 
-## Código
+- `.vscode/`
+- `notebooks/`
+- `resources/`
+- `src/medallion_pipeline/{explorations,rules,transformations,utilities}`
 
-Estructura mínima para desarrollo en Databricks:
+## Generacion de datos
 
-- `codigo/README.md`
-- `codigo/data_generator/generate.py`
+Uno de los generadores de datos del proyecto es:
+
+- `generate.py` (ruta: `F:/DISCO DURO PORTABLE/INGENIERIA/MASTER/14/DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA/trabajo/generate.py`)
