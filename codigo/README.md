@@ -17,6 +17,6 @@ Esta carpeta contiene el codigo fuente del proyecto con la misma estructura de d
 
 Uno de los generadores de datos del proyecto es:
 
-- `F:/DISCO DURO PORTABLE/INGENIERIA/MASTER/14/DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA/trabajo/generate.py`
+- `src/medallion_pipeline/utilities/generate.py`
 
 Ese script crea datos sinteticos en las rutas `context/`, `events/` y `source_buffer/` en su carpeta de ejecucion.

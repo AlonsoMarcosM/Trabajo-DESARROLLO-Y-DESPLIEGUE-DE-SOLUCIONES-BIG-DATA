@@ -21,4 +21,4 @@ La carpeta `codigo/` mantiene la misma estructura de directorios del ejemplo del
 
 Uno de los generadores de datos del proyecto es:
 
-- `generate.py` (ruta: `F:/DISCO DURO PORTABLE/INGENIERIA/MASTER/14/DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA/trabajo/generate.py`)
+- `codigo/src/medallion_pipeline/utilities/generate.py`
