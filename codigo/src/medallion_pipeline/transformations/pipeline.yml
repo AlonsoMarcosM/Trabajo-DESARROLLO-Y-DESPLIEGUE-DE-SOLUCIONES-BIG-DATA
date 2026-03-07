@@ -1,0 +1,21 @@
+resources:
+  pipelines:
+    telco_churn_bronze:
+      name: "Telco Churn - Bronze Layer"
+      target: default
+      catalog: workspace
+
+      libraries:
+        - notebook:
+            path: ./transformations/01_bronze_ingestion.py
+        - notebook:
+            path: ./transformations/02_silver_transformation.py
+
+      clusters:
+        - label: default
+          num_workers: 2
+          spark_version: "15.4.x-scala2.12"
+          node_type_id: i3.xlarge
+
+      development: true
+      continuous: false
