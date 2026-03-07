@@ -1,0 +1,8 @@
+bundle:
+  name: trabajo-bigdata
+
+targets:
+  dev:
+    default: true
+    workspace:
+      host: https://dbc-8f4f65e6-359f.cloud.databricks.com.azuredatabricks.net
