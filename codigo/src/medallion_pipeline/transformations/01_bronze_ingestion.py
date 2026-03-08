@@ -22,11 +22,8 @@ Ingestion strategy:
 
 Decorators used
 ---------------
-@dp.table                  -> batch materialised table (full-refresh on each run)
-@dp.create_streaming_table -> declares an append-only streaming Delta table
-@dp.append_flow            -> defines the Auto Loader flow that feeds it
+@dp.table              -> batch or streaming table (full-refresh for batch, streaming for streaming)
 """
-
 
 ###############################################################################
 # Imports
@@ -34,10 +31,8 @@ Decorators used
 
 from pathlib import Path
 
-# Por esto
-import dlt
+import pyspark.pipelines as dp
 from pyspark.sql.functions import col, current_timestamp
-
 
 ###############################################################################
 # Configuration
@@ -53,7 +48,6 @@ path_context      = vol_landing_zone / "context"
 path_usage        = vol_landing_zone / "events" / "usage"
 path_labels       = vol_landing_zone / "events" / "labels"
 path_interactions = vol_landing_zone / "events" / "interactions"
-
 
 ###############################################################################
 # 1. Customers — batch ingestion (full refresh)
@@ -109,12 +103,11 @@ def bronze_customers():
              .withColumn("source_file",         col("_metadata.file_path"))
     )
 
-
 ###############################################################################
 # 2. Usage — streaming ingestion via Auto Loader
 ###############################################################################
 
-@dp.create_streaming_table(
+@dp.table(
     name    = "bronze_usage",
     comment = """
     **Bronze layer** — raw monthly usage events (append-only).
@@ -151,11 +144,6 @@ def bronze_customers():
     """,
 )
 def bronze_usage():
-    pass
-
-
-@dp.append_flow(target = "bronze_usage")
-def bronze_usage_flow():
     return (
         spark.readStream
              .format("cloudFiles")
@@ -166,12 +154,11 @@ def bronze_usage_flow():
              .withColumn("source_file",         col("_metadata.file_path"))
     )
 
-
 ###############################################################################
 # 3. Churn Labels — streaming ingestion via Auto Loader
 ###############################################################################
 
-@dp.create_streaming_table(
+@dp.table(
     name    = "bronze_labels",
     comment = """
     **Bronze layer** — raw churn labels, delayed feedback (append-only).
@@ -196,11 +183,6 @@ def bronze_usage_flow():
     """,
 )
 def bronze_labels():
-    pass
-
-
-@dp.append_flow(target = "bronze_labels")
-def bronze_labels_flow():
     return (
         spark.readStream
              .format("cloudFiles")
@@ -211,12 +193,11 @@ def bronze_labels_flow():
              .withColumn("source_file",         col("_metadata.file_path"))
     )
 
-
 ###############################################################################
 # 4. Interactions — streaming ingestion via Auto Loader
 ###############################################################################
 
-@dp.create_streaming_table(
+@dp.table(
     name    = "bronze_interactions",
     comment = """
     **Bronze layer** — raw customer interaction events (append-only).
@@ -249,11 +230,6 @@ def bronze_labels_flow():
     """,
 )
 def bronze_interactions():
-    pass
-
-
-@dp.append_flow(target = "bronze_interactions")
-def bronze_interactions_flow():
     return (
         spark.readStream
              .format("cloudFiles")
