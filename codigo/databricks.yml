@@ -2,12 +2,14 @@ bundle:
   name: trabajo-bigdata
 
 include:
-   - src/medallion_pipeline/transformations/*.yml
+  - resources/*.yml
+
 sync:
   exclude:
     - data_generator/
     - "**/*.json"
     - "**/*.csv"
+
 targets:
   dev:
     default: true
