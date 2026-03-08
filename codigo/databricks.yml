@@ -2,7 +2,7 @@ bundle:
   name: trabajo-bigdata
 
 include:
-  - resources/*.yml
+  - src/medallion_pipeline/transformations/pipeline.yml
 
 sync:
   exclude:
