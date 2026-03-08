@@ -9,10 +9,10 @@ resources:
       continuous: false
       libraries:
         - file:
-            path: src/medallion_pipeline/transformations/01_bronze_ingestion.py
+            path: ../src/medallion_pipeline/transformations/01_bronze_ingestion.py
         - file:
-            path: src/medallion_pipeline/transformations/02_silver_transformation.py
+            path: ../src/medallion_pipeline/transformations/02_silver_transformation.py
         - file:
-            path: src/medallion_pipeline/rules/__init__.py
+            path: ../src/medallion_pipeline/rules/__init__.py
         - file:
-            path: src/medallion_pipeline/rules/customers.py
+            path: ../src/medallion_pipeline/rules/customers.py

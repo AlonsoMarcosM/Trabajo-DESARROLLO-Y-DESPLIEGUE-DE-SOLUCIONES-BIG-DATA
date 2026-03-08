@@ -7,7 +7,7 @@ Usage in transformation scripts:
     from rules import get_customer_rules, get_usage_rules, ...
 """
 
-from rules.customers import (
+from customers import (
     get_customer_rules,
     get_usage_rules,
     get_label_rules,

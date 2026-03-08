@@ -8,24 +8,29 @@ unified stream-stream joined fact table of usage + churn labels.
 
 Tables produced
 ---------------
-silver_customers_quarantine  | DLQ for invalid customer records
-silver_customers             | SCD-2 historical customer master (AUTO CDC)
-silver_usage_quarantine      | DLQ for invalid usage records
-silver_usage                 | Clean usage events (append-only)
-silver_labels_quarantine     | DLQ for invalid label records
-silver_labels                | Clean churn labels (append-only)
+silver_customers_quarantine    | DLQ for invalid customer records
+silver_customers               | SCD-2 historical customer master (AUTO CDC)
+silver_usage_quarantine        | DLQ for invalid usage records
+silver_usage                   | Clean usage events (append-only)
+silver_labels_quarantine       | DLQ for invalid label records
+silver_labels                  | Clean churn labels (append-only)
 silver_interactions_quarantine | DLQ for invalid interaction records
-silver_interactions          | Clean interaction events (append-only)
-silver_usage_with_labels     | Unified fact: usage enriched with churn labels
-                               (stream-stream join with watermark)
+silver_interactions            | Clean interaction events (append-only)
+silver_usage_with_labels       | Unified fact: usage enriched with churn labels
+                                 (stream-stream join with watermark)
 """
 
 ###############################################################################
 # Imports
 ###############################################################################
 
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 import pyspark.pipelines as dp
-from pyspark.sql.functions import col, current_timestamp, expr, lit
+from pyspark.sql.functions import col, current_timestamp, expr
 from pyspark.sql.types import BooleanType
 from functools import reduce
 
@@ -106,19 +111,15 @@ def silver_customers_valid():
     )
 
 
-# 1e. SCD-2 target table
-@dp.create_streaming_table(name="silver_customers")
-def silver_customers():
-    pass
-
-
-# 1f. AUTO CDC flow — maintains __START_AT / __END_AT automatically
+# 1e. AUTO CDC flow — creates silver_customers and maintains __START_AT / __END_AT
+# NOTE: do NOT declare @dp.create_streaming_table for silver_customers —
+# create_auto_cdc_flow creates the target table itself.
 dp.create_auto_cdc_flow(
-    name             = "silver_customers_cdc",
-    target           = "silver_customers",
-    source           = "silver_customers_valid",
-    keys             = ["customer_id"],
-    sequence_by      = "customer_updated_at",
+    name               = "silver_customers_cdc",
+    target             = "silver_customers",
+    source             = "silver_customers_valid",
+    keys               = ["customer_id"],
+    sequence_by        = "customer_updated_at",
     except_column_list = BRONZE_AUDIT_COLS,
 )
 
@@ -304,10 +305,10 @@ def interactions_to_silver():
 
     Key columns
     -----------
-    customer_id         : FK -> silver_customers
-    year_month          : billing period
-    churn_date          : NULL if customer retained that month
-    label_available_date: point-in-time boundary for safe ML feature extraction
+    customer_id          : FK -> silver_customers
+    year_month           : billing period
+    churn_date           : NULL if customer retained that month
+    label_available_date : point-in-time boundary for safe ML feature extraction
     """,
 )
 def silver_usage_with_labels():
