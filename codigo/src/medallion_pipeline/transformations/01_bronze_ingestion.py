@@ -34,7 +34,8 @@ Decorators used
 
 from pathlib import Path
 
-import pyspark.pipelines as dp
+# Por esto
+import dlt
 from pyspark.sql.functions import col, current_timestamp
 
 

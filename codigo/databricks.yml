@@ -2,10 +2,14 @@ bundle:
   name: trabajo-bigdata
 
 include:
-  - src/*.yml
-
+   - src/medallion_pipeline/transformations/*.yml
+sync:
+  exclude:
+    - data_generator/
+    - "**/*.json"
+    - "**/*.csv"
 targets:
   dev:
     default: true
     workspace:
-      host: https://dbc-8f4f65e6-359f.cloud.databricks.com.azuredatabricks.net
+      host: https://dbc-8f4f65e6-359f.cloud.databricks.com
