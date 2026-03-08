@@ -10,7 +10,10 @@ resources:
             path: ./01_bronze_ingestion.py
         - file:
             path: ./02_silver_transformation.py
-
+        - file:
+            path: ./src/medallion_pipeline/rules/__init__.py
+        - file:
+            path: ./src/medallion_pipeline/rules/customers.py
       serverless: true
 
       development: true
