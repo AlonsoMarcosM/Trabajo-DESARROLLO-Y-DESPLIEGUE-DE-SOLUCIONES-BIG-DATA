@@ -32,17 +32,19 @@ Decorators used
 from pathlib import Path
 
 import pyspark.pipelines as dp
-from pyspark.sql.functions import col, current_timestamp
+from pyspark.sql.functions import col, current_timestamp, to_timestamp
 
 ###############################################################################
 # Configuration
 # ----------------------------------------------------------------------------
-# Adjust base_path to match the Unity Catalog Volume where you uploaded the
-# generator output:   /Volumes/<catalog>/<schema>/<volume_name>
+# Landing zone root can be provided from the pipeline configuration in
+# pipeline.yml as `landing_volume_path`. Fallback keeps previous default.
+# Example: /Volumes/<catalog>/<schema>/<volume_name>
 ###############################################################################
 
-base_path        = Path("/Volumes/workspace/default")
-vol_landing_zone = base_path / "landing_zone"
+vol_landing_zone = Path(
+    spark.conf.get("landing_volume_path", "/Volumes/workspace/default/landing_zone")
+)
 
 path_context      = vol_landing_zone / "context"
 path_usage        = vol_landing_zone / "events" / "usage"
@@ -99,6 +101,8 @@ def bronze_customers():
              .option("header",      "true")
              .option("inferSchema", "true")
              .load(str(path_context))
+             # Keep schema stable across reruns with different input volumes.
+             .withColumn("customer_updated_at", col("customer_updated_at").cast("string"))
              .withColumn("ingestion_timestamp", current_timestamp())
              .withColumn("source_file",         col("_metadata.file_path"))
     )
@@ -189,6 +193,7 @@ def bronze_labels():
              .option("cloudFiles.format",           "json")
              .option("cloudFiles.inferColumnTypes", "true")
              .load(str(path_labels))
+             .withColumn("label_available_date", to_timestamp(col("label_available_date")))
              .withColumn("ingestion_timestamp", current_timestamp())
              .withColumn("source_file",         col("_metadata.file_path"))
     )

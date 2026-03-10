@@ -1,3 +1,10 @@
-﻿.agents.md
+.agents.md
 Credit Card Fraud Detection Example Project/
 .idea
+__pycache__/
+codigo/.databricks/
+codigo/.tmp_*
+codigo/src/medallion_pipeline/utilities/context/
+codigo/src/medallion_pipeline/utilities/events/
+codigo/src/medallion_pipeline/utilities/source_buffer/
+codigo/src/medallion_pipeline/utilities/generate_full.log

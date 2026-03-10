@@ -2,14 +2,13 @@
 Silver Layer — Telco Churn (Medallion Architecture)
 =====================================================
 Reads from Bronze Delta tables, applies quality rules (expectations),
-routes invalid records to quarantine (Dead Letter Queue), applies
-SCD Type-2 via AUTO CDC for customer master data, and produces a
-unified stream-stream joined fact table of usage + churn labels.
+routes invalid records to quarantine (Dead Letter Queue), and produces
+clean Silver tables plus a unified usage+label fact stream.
 
 Tables produced
 ---------------
 silver_customers_quarantine    | DLQ for invalid customer records
-silver_customers               | SCD-2 historical customer master (AUTO CDC)
+silver_customers               | Clean customer stream (append-only)
 silver_usage_quarantine        | DLQ for invalid usage records
 silver_usage                   | Clean usage events (append-only)
 silver_labels_quarantine       | DLQ for invalid label records
@@ -24,22 +23,60 @@ silver_usage_with_labels       | Unified fact: usage enriched with churn labels
 # Imports
 ###############################################################################
 
-import sys
-import os
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
 import pyspark.pipelines as dp
-from pyspark.sql.functions import col, current_timestamp, expr
+from pyspark.sql.functions import col, current_timestamp, expr, to_timestamp
 from pyspark.sql.types import BooleanType
 from functools import reduce
 
-from rules import (
-    get_customer_rules,
-    get_usage_rules,
-    get_label_rules,
-    get_interaction_rules,
-)
+try:
+    from rules import (
+        get_customer_rules,
+        get_usage_rules,
+        get_label_rules,
+        get_interaction_rules,
+    )
+except Exception:
+    # Lakeflow scripts may run without local package resolution;
+    # keep an inline fallback so the pipeline remains executable.
+    def get_customer_rules():
+        return {
+            "valid_customer_id":    "customer_id IS NOT NULL",
+            "valid_age":            "age > 0 AND age < 120",
+            "valid_contract_type":  "contract_type IN ('monthly', 'annual')",
+            "valid_monthly_fee":    "monthly_fee >= 0",
+        }
+
+
+    def get_usage_rules():
+        return {
+            "valid_customer_id":        "customer_id IS NOT NULL",
+            "valid_year_month":         "year_month IS NOT NULL",
+            "valid_data_consumed":      "data_consumed_gb >= 0",
+            "valid_call_minutes":       "call_minutes >= 0",
+            "valid_bill_amount":        "bill_amount >= 0",
+        }
+
+
+    def get_label_rules():
+        return {
+            "valid_customer_id":        "customer_id IS NOT NULL",
+            "valid_year_month":         "year_month IS NOT NULL",
+        }
+
+
+    def get_interaction_rules():
+        return {
+            "valid_customer_id":        "customer_id IS NOT NULL",
+            "valid_timestamp":          "timestamp IS NOT NULL",
+            "valid_interaction_type":   (
+                "interaction_type IN ("
+                "'call_center_inquiry', 'call_center_complaint', 'online_chat',"
+                "'store_visit', 'plan_upgrade', 'plan_downgrade', 'plan_renewal',"
+                "'technical_support', 'billing_dispute', 'cancellation_request',"
+                "'loyalty_offer_accepted', 'loyalty_offer_rejected', 'port_out_request'"
+                ")"
+            ),
+        }
 
 ###############################################################################
 # Helpers
@@ -57,19 +94,12 @@ def build_quarantine_flag(rules: dict):
     return (~combined).cast(BooleanType()).alias("is_quarantined")
 
 
-# Audit columns added by Bronze — must be excluded from CDC to avoid
-# spurious SCD-2 versions on metadata changes.
-BRONZE_AUDIT_COLS = ["ingestion_timestamp", "source_file", "_rescued_data"]
-
-
 ###############################################################################
-# 1. CUSTOMERS — SCD Type-2 via AUTO CDC
+# 1. CUSTOMERS — quarantine + clean append
 ###############################################################################
 
 # 1a. Quarantine table (DLQ)
-@dp.create_streaming_table(name="silver_customers_quarantine")
-def silver_customers_quarantine():
-    pass
+dp.create_streaming_table(name="silver_customers_quarantine")
 
 
 # 1b. Routing hub — temporary table, not persisted to disk
@@ -111,26 +141,20 @@ def silver_customers_valid():
     )
 
 
-# 1e. AUTO CDC flow — creates silver_customers and maintains __START_AT / __END_AT
-# NOTE: do NOT declare @dp.create_streaming_table for silver_customers —
-# create_auto_cdc_flow creates the target table itself.
-dp.create_auto_cdc_flow(
-    name               = "silver_customers_cdc",
-    target             = "silver_customers",
-    source             = "silver_customers_valid",
-    keys               = ["customer_id"],
-    sequence_by        = "customer_updated_at",
-    except_column_list = BRONZE_AUDIT_COLS,
-)
+# 1e. Clean customers table (append-only in current runtime profile).
+dp.create_streaming_table(name="silver_customers")
+
+
+@dp.append_flow(target="silver_customers")
+def customers_to_silver():
+    return spark.readStream.table("silver_customers_valid")
 
 
 ###############################################################################
 # 2. USAGE — quarantine + clean append
 ###############################################################################
 
-@dp.create_streaming_table(name="silver_usage_quarantine")
-def silver_usage_quarantine():
-    pass
+dp.create_streaming_table(name="silver_usage_quarantine")
 
 
 @dp.table(
@@ -169,9 +193,7 @@ def silver_usage_valid():
     )
 
 
-@dp.create_streaming_table(name="silver_usage")
-def silver_usage():
-    pass
+dp.create_streaming_table(name="silver_usage")
 
 
 @dp.append_flow(target="silver_usage")
@@ -183,9 +205,7 @@ def usage_to_silver():
 # 3. LABELS — quarantine + clean append
 ###############################################################################
 
-@dp.create_streaming_table(name="silver_labels_quarantine")
-def silver_labels_quarantine():
-    pass
+dp.create_streaming_table(name="silver_labels_quarantine")
 
 
 @dp.table(
@@ -224,9 +244,7 @@ def silver_labels_valid():
     )
 
 
-@dp.create_streaming_table(name="silver_labels")
-def silver_labels():
-    pass
+dp.create_streaming_table(name="silver_labels")
 
 
 @dp.append_flow(target="silver_labels")
@@ -238,9 +256,7 @@ def labels_to_silver():
 # 4. INTERACTIONS — quarantine + clean append
 ###############################################################################
 
-@dp.create_streaming_table(name="silver_interactions_quarantine")
-def silver_interactions_quarantine():
-    pass
+dp.create_streaming_table(name="silver_interactions_quarantine")
 
 
 @dp.table(
@@ -279,9 +295,7 @@ def silver_interactions_valid():
     )
 
 
-@dp.create_streaming_table(name="silver_interactions")
-def silver_interactions():
-    pass
+dp.create_streaming_table(name="silver_interactions")
 
 
 @dp.append_flow(target="silver_interactions")
@@ -290,43 +304,27 @@ def interactions_to_silver():
 
 
 ###############################################################################
-# 5. UNIFIED FACT TABLE — stream-stream join with watermark
+# 5. UNIFIED FACT TABLE (batch)
 #    usage LEFT JOIN labels ON customer_id + year_month
-#    Watermark: 60 days on label_available_date to handle delayed feedback
 ###############################################################################
 
-@dp.create_streaming_table(
-    name    = "silver_usage_with_labels",
+@dp.table(
+    name    = "silver_usage_with_labels_batch",
     comment = """
-    **Silver layer** — unified fact table.
+    **Silver layer** - unified fact table.
 
-    Joins clean usage events with churn labels using a stream-stream join
-    with watermarks to handle delayed label feedback (up to 60 days).
-
-    Key columns
-    -----------
-    customer_id          : FK -> silver_customers
-    year_month           : billing period
-    churn_date           : NULL if customer retained that month
-    label_available_date : point-in-time boundary for safe ML feature extraction
+    Batch join between clean usage rows and labels.
+    This avoids stream-stream join constraints in triggered updates.
     """,
 )
-def silver_usage_with_labels():
-    pass
-
-
-@dp.append_flow(target="silver_usage_with_labels")
-def usage_with_labels_flow():
-    usage = (
-        spark.readStream
-             .table("silver_usage")
-             .withWatermark("ingestion_timestamp", "60 days")
-    )
+def silver_usage_with_labels_batch():
+    usage = spark.read.table("silver_usage")
 
     labels = (
-        spark.readStream
+        spark.read
              .table("silver_labels")
-             .withWatermark("label_available_date", "60 days")
+             .select("customer_id", "year_month", "churn_date", "label_available_date")
+             .withColumn("label_available_date", to_timestamp(col("label_available_date")))
     )
 
     return (

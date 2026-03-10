@@ -1,17 +1,32 @@
 bundle:
   name: trabajo-bigdata
+  databricks_cli_version: ">=0.230.0"
 
 include:
-  - src/medallion_pipeline/transformations/pipeline.yml
+  - resources/*.yml
 
 sync:
   exclude:
-    - data_generator/
-    - "**/*.json"
-    - "**/*.csv"
+    - src/medallion_pipeline/utilities/context/**
+    - src/medallion_pipeline/utilities/events/**
+    - src/medallion_pipeline/utilities/source_buffer/**
+    - src/medallion_pipeline/utilities/generate_full.log
+
+variables:
+  uc_catalog:
+    description: "Unity Catalog catalog where the pipeline publishes tables"
+    default: workspace
+  uc_schema:
+    description: "Unity Catalog schema where the pipeline publishes tables"
+    default: default
+  landing_volume_path:
+    description: "Volume root path with generated input data"
+    default: /Volumes/workspace/default/landing_zone
 
 targets:
   dev:
+    mode: development
     default: true
     workspace:
-      host: https://dbc-8f4f65e6-359f.cloud.databricks.com
+      host: https://dbc-5ae029e2-ed3d.cloud.databricks.com
+      root_path: /Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
