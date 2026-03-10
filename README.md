@@ -1,24 +1,29 @@
-# Trabajo DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA
+# Trabajo - Desarrollo y Despliegue de Soluciones Big Data
 
-Repositorio de trabajo del proyecto practico de la asignatura.
+Repositorio del proyecto de la asignatura.
 
-## Documentacion
+## Contenido del repositorio
 
-- `documentacion/README.md`
-- `documentacion/hito_1/memoria_hito_1.md`
-- `documentacion/hito_1/memoria_hito_1.tex`
+- `codigo/`: implementacion tecnica del pipeline y configuracion de Databricks.
+- `documentacion/`: memorias y documentos de los hitos.
 
-## Codigo
+## Estructura
 
-La carpeta `codigo/` mantiene la misma estructura de directorios del ejemplo del profesor, pero vacia para desarrollo propio:
+```text
+.
+├── codigo/
+├── documentacion/
+├── .gitignore
+└── README.md
+```
 
-- `.vscode/`
-- `notebooks/`
-- `resources/`
-- `src/medallion_pipeline/{explorations,rules,transformations,utilities}`
+## Documentacion principal
 
-## Generacion de datos
+- Guia tecnica y ejecucion: `codigo/README.md`
+- Pipeline Medallion: `codigo/src/medallion_pipeline/README.md`
+- Memoria Hito 1: `documentacion/hito_1/memoria_hito_1.md`
+- Memoria Hito 2: `documentacion/hito_2/memoria_hito_2.md`
 
-Uno de los generadores de datos del proyecto es:
+## Estado del proyecto
 
-- `codigo/src/medallion_pipeline/utilities/generate.py`
+El desarrollo se organiza por hitos (analisis, datos, modelado y despliegue).
