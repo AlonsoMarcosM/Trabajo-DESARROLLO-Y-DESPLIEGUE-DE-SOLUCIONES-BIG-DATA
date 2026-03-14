@@ -15,7 +15,10 @@ el flujo completo, de inicio a fin, sin depender de conocimiento previo.
 codigo/
 |-- databricks.yml
 |-- resources/
+|   |-- telco_churn.job.yml
 |   `-- telco_churn.pipeline.yml
+|-- notebooks/
+|   `-- 04_Feature_Store_Registration.py
 `-- src/medallion_pipeline/
     |-- rules/
     |   |-- __init__.py
@@ -23,7 +26,9 @@ codigo/
     |-- transformations/
     |   |-- 01_bronze_ingestion.py
     |   |-- 02_silver_transformation.py
-    |   `-- 03_gold_features.py
+    |   |-- 03_gold_churn_spine.py
+    |   |-- 03_gold_customer_profile.py
+    |   `-- 03_gold_customer_aggregations.py
     |-- utilities/
     |   `-- generate.py
     `-- README.md
@@ -36,6 +41,9 @@ codigo/
 - Permisos en el workspace para:
   - crear/ejecutar pipelines,
   - leer/escribir en Unity Catalog y Volumes.
+- Recomendado:
+  - tener autenticacion hecha con perfil propio (`databricks auth login`)
+  - ejecutar todos los comandos desde la carpeta `codigo/`
 
 ## 3. Configuracion del bundle
 
@@ -62,7 +70,14 @@ codigo/
 Ejemplo de override:
 
 ```powershell
-databricks bundle validate -t dev -p <perfil> --var "uc_catalog=workspace,uc_schema=default,landing_volume_path=/Volumes/workspace/default/landing_zone"
+databricks bundle validate -t dev -p <perfil> --var "uc_catalog=workspace,uc_schema=telco_churn,landing_volume_path=/Volumes/workspace/telco_churn/landing_zone"
+```
+
+### 3.3 Crear esquema y volume recomendados (CLI)
+
+```powershell
+databricks schemas create workspace.telco_churn --comment "Schema del proyecto Telco Churn para Hito 2 (pipeline medallion: bronze, silver y gold)." -p <perfil_databricks>
+databricks volumes create workspace.telco_churn.landing_zone --volume-type MANAGED --comment "Landing zone del proyecto Telco Churn (context, events, source_buffer)." -p <perfil_databricks>
 ```
 
 ## 4. Flujo completo desde CLI (inicio a fin)
@@ -143,7 +158,53 @@ databricks bundle run telco_churn -t dev -p <perfil_databricks>
 Si cambiaste mucho volumen o esquema, usar full refresh:
 
 ```powershell
-databricks pipelines start-update <pipeline_id> --full-refresh -p <perfil_databricks>
+databricks bundle run telco_churn -t dev -p <perfil_databricks> --full-refresh-all
+```
+
+### 4.6 Ejecutar job final (pipeline -> notebook)
+
+El bundle define un job final de orquestacion con dos tareas:
+
+1. `run_telco_pipeline`
+2. `run_feature_store_registration_simulation` (depende de la 1)
+
+Ejecucion:
+
+```powershell
+databricks bundle run telco_churn_orchestration -t dev -p <perfil_databricks>
+```
+
+Notificaciones configuradas:
+
+- `on_failure`: correos del equipo.
+- `on_success`: correos del equipo.
+
+### 4.7 Validar ejecucion (CLI) con checks rapidos
+
+Comprobar recursos de gobierno:
+
+```powershell
+databricks catalogs get workspace -p <perfil_databricks>
+databricks schemas get workspace.telco_churn -p <perfil_databricks>
+databricks volumes read workspace.telco_churn.landing_zone -p <perfil_databricks>
+```
+
+Comprobar tablas del esquema:
+
+```powershell
+databricks tables list workspace telco_churn --max-results 200 -p <perfil_databricks>
+```
+
+Comprobar ultimo update de pipeline:
+
+```powershell
+databricks pipelines list-updates <pipeline_id> --max-results 5 -p <perfil_databricks>
+```
+
+Comprobar ultimo run de job:
+
+```powershell
+databricks jobs list-runs --job-id 992681729800259 --limit 5 -p <perfil_databricks>
 ```
 
 ## 5. Flujo equivalente desde UI de Databricks
@@ -171,8 +232,21 @@ databricks pipelines start-update <pipeline_id> --full-refresh -p <perfil_databr
 Si ya esta desplegada por bundle:
 
 1. Ir a `Jobs & Pipelines`.
-2. Buscar `telco_churn_etl`.
+2. Buscar `Telco Churn - Hito 2 Medallion ETL`.
 3. Abrir y pulsar `Start` o `Run update`.
+
+## 5.4 Crear/ejecutar el job desde UI
+
+Si ya esta desplegado por bundle:
+
+1. Ir a `Jobs & Pipelines` -> `Jobs`.
+2. Abrir `Telco Churn - Hito 2 Orchestration`.
+3. Verificar que la tarea 2 depende de la tarea 1.
+4. Revisar notificaciones (`on_success`/`on_failure`).
+5. Pulsar `Run now`.
+6. Confirmar en la vista del run:
+  - tarea `run_telco_pipeline` en `SUCCESS`
+  - tarea `run_feature_store_registration_simulation` en `SUCCESS`
 
 Si quieres crear pipeline manual:
 
@@ -184,7 +258,9 @@ Si quieres crear pipeline manual:
 3. Anadir source files:
   - `src/medallion_pipeline/transformations/01_bronze_ingestion.py`
   - `src/medallion_pipeline/transformations/02_silver_transformation.py`
-  - `src/medallion_pipeline/transformations/03_gold_features.py`
+  - `src/medallion_pipeline/transformations/03_gold_churn_spine.py`
+  - `src/medallion_pipeline/transformations/03_gold_customer_profile.py`
+  - `src/medallion_pipeline/transformations/03_gold_customer_aggregations.py`
 4. En `Configuration` definir `landing_volume_path`.
 5. Guardar y ejecutar.
 
@@ -193,28 +269,36 @@ Si quieres crear pipeline manual:
 Ejecutar en SQL Editor o notebook SQL:
 
 ```sql
-SELECT COUNT(*) AS n FROM workspace.default.bronze_customers;
-SELECT COUNT(*) AS n FROM workspace.default.bronze_usage;
-SELECT COUNT(*) AS n FROM workspace.default.bronze_labels;
-SELECT COUNT(*) AS n FROM workspace.default.bronze_interactions;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.bronze_customers;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.bronze_usage;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.bronze_labels;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.bronze_interactions;
 
-SELECT COUNT(*) AS n FROM workspace.default.silver_customers;
-SELECT COUNT(*) AS n FROM workspace.default.silver_usage;
-SELECT COUNT(*) AS n FROM workspace.default.silver_labels;
-SELECT COUNT(*) AS n FROM workspace.default.silver_interactions;
-SELECT COUNT(*) AS n FROM workspace.default.silver_usage_with_labels_batch;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.silver_customers_history;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.silver_churn_events;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.silver_interactions_clean;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.silver_quarantine_customers;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.silver_quarantine_usage;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.silver_quarantine_labels;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.silver_quarantine_interactions;
 
-SELECT COUNT(*) AS n FROM workspace.default.gold_churn_features;
-SELECT COUNT(*) AS n FROM workspace.default.gold_churn_training_dataset;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.gold_churn_spine;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.gold_customer_profile;
+SELECT COUNT(*) AS n FROM workspace.telco_churn.gold_customer_aggregations;
 ```
 
-Comprobacion adicional recomendada:
+Comprobacion de ventanas temporales:
 
 ```sql
-SELECT
-  SUM(CASE WHEN churn_date IS NOT NULL THEN 1 ELSE 0 END) AS churn_positive,
-  COUNT(*) AS total_rows
-FROM workspace.default.gold_churn_training_dataset;
+SELECT MIN(year_month) AS min_ym, MAX(year_month) AS max_ym
+FROM workspace.telco_churn.gold_churn_spine;
+```
+
+Comprobacion de claves para Feature Store:
+
+```sql
+DESCRIBE TABLE EXTENDED workspace.telco_churn.gold_customer_profile;
+DESCRIBE TABLE EXTENDED workspace.telco_churn.gold_customer_aggregations;
 ```
 
 ## 7. Errores tipicos y solucion
@@ -228,7 +312,7 @@ FROM workspace.default.gold_churn_training_dataset;
 - cambio de workspace:
   - hacer `unbind` y redeploy del bundle.
 - conflicto de esquema al recargar:
-  - lanzar `start-update --full-refresh`.
+  - lanzar `databricks bundle run telco_churn -t dev --full-refresh-all`.
 
 ## 8. Que se sube a Git y que no
 
@@ -260,7 +344,35 @@ Cada miembro del equipo debe:
 
 No hay que compartir `codigo/.databricks/bundle`; se regenera localmente.
 
-## 10. Regla para Hito 3 (train/test sin leakage temporal)
+## 10. Runbook para companero (desde cero)
+
+### 10.1 Ruta CLI (recomendada para reproducibilidad)
+
+1. Clonar repo y abrir terminal en `codigo/`.
+2. Login con su usuario Databricks (`auth login`).
+3. `bundle validate` y `bundle deploy`.
+4. Generar datos (`generate.py`) y cargar al volumen.
+5. Ejecutar pipeline (`bundle run telco_churn`).
+6. Ejecutar job final (`bundle run telco_churn_orchestration`).
+7. Validar tablas y estados con los checks de secciones 4.7 y 6.
+
+### 10.2 Ruta UI (sin CLI para ejecucion)
+
+1. Revisar catalogo/esquema/volumen en `Catalog`.
+2. Subir datos al volumen en estructura correcta.
+3. Ejecutar pipeline desde `Jobs & Pipelines`.
+4. Ejecutar job de orquestacion desde `Jobs`.
+5. Revisar tabla por tabla en `Catalog` y validar conteos en SQL Editor.
+
+### 10.3 Criterio de "todo correcto"
+
+Se considera que un companero ha replicado bien cuando:
+
+1. Pipeline termina en `COMPLETED` sin `ERROR`.
+2. Job termina en `SUCCESS` con ambas tareas en verde.
+3. Existen tablas bronze/silver/gold en `workspace.telco_churn`.
+4. El notebook `04_Feature_Store_Registration.py` finaliza en modo simulacion sin excepciones.
+## 11. Regla para Hito 3 (train/test sin leakage temporal)
 
 Para mantener coherencia con el enfoque del ejemplo del profesor y evitar fuga
 de informacion entre entrenamiento y evaluacion:
@@ -279,10 +391,10 @@ Comprobacion recomendada antes de entrenar:
 
 ```sql
 SELECT MIN(year_month) AS min_ym, MAX(year_month) AS max_ym
-FROM workspace.default.gold_churn_features;
+FROM workspace.telco_churn.gold_churn_spine;
 ```
 
-## 11. Documentacion relacionada
+## 12. Documentacion relacionada
 
 - Pipeline interno: `src/medallion_pipeline/README.md`
 - Memoria Hito 2: `../documentacion/hito_2/memoria_hito_2.md`

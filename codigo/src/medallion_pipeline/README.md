@@ -10,14 +10,25 @@ Este directorio contiene la logica de preparacion de datos del Hito 2.
   - Metadatos de auditoria: `ingestion_timestamp`, `source_file`.
 
 - Silver (`transformations/02_silver_transformation.py`)
-  - Reglas de calidad por entidad.
-  - Cuarentena por tipo de dato (`silver_*_quarantine`).
-  - Tablas limpias append-only (`silver_customers`, `silver_usage`, `silver_labels`, `silver_interactions`).
-  - Join consolidado `silver_usage_with_labels_batch`.
+  - Reglas de calidad por entidad y tablas de cuarentena:
+    - `silver_quarantine_customers`
+    - `silver_quarantine_usage`
+    - `silver_quarantine_labels`
+    - `silver_quarantine_interactions`
+  - Historial SCD2 de clientes con AUTO CDC:
+    - `silver_customers_history`
+  - Join stream-static para eventos unificados (menos estado y mas estable):
+    - `silver_churn_events`
+  - Tabla limpia de interacciones:
+    - `silver_interactions_clean`
 
-- Gold (`transformations/03_gold_features.py`)
-  - Feature table: `gold_churn_features`.
-  - Dataset final de entrenamiento: `gold_churn_training_dataset`.
+- Gold
+  - `transformations/03_gold_churn_spine.py`
+    - `gold_churn_spine`
+  - `transformations/03_gold_customer_profile.py`
+    - `gold_customer_profile` (PK temporal para PiT)
+  - `transformations/03_gold_customer_aggregations.py`
+    - `gold_customer_aggregations` (features derivadas por cliente-mes)
 
 ## Reglas de calidad
 
@@ -48,3 +59,18 @@ databricks bundle validate -t dev
 databricks bundle deploy -t dev
 databricks bundle run telco_churn -t dev
 ```
+
+## Prueba rapida para companero
+
+Por CLI:
+
+```powershell
+databricks bundle run telco_churn -t dev
+databricks bundle run telco_churn_orchestration -t dev
+```
+
+Por UI:
+
+1. Ejecutar pipeline `Telco Churn - Hito 2 Medallion ETL`.
+2. Ejecutar job `Telco Churn - Hito 2 Orchestration`.
+3. Verificar en `Catalog` que existen tablas bronze/silver/gold en `workspace.telco_churn`.

@@ -1,7 +1,7 @@
 resources:
   pipelines:
     telco_churn:
-      name: "telco_churn_etl"
+      name: "Telco Churn - Hito 2 Medallion ETL"
       catalog: ${var.uc_catalog}
       schema: ${var.uc_schema}
       serverless: true
@@ -9,10 +9,17 @@ resources:
       continuous: false
       configuration:
         landing_volume_path: ${var.landing_volume_path}
+        project_name: "Telco Churn"
+        project_stage: "Hito 2"
+        project_owner_team: "Alonso Marcos y Jose Barros"
       libraries:
         - file:
             path: ../src/medallion_pipeline/transformations/01_bronze_ingestion.py
         - file:
             path: ../src/medallion_pipeline/transformations/02_silver_transformation.py
         - file:
-            path: ../src/medallion_pipeline/transformations/03_gold_features.py
+            path: ../src/medallion_pipeline/transformations/03_gold_churn_spine.py
+        - file:
+            path: ../src/medallion_pipeline/transformations/03_gold_customer_profile.py
+        - file:
+            path: ../src/medallion_pipeline/transformations/03_gold_customer_aggregations.py

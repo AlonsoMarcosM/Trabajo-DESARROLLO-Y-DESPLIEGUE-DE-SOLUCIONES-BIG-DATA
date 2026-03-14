@@ -1,57 +1,221 @@
 ﻿\documentclass[12pt,a4paper]{article}
+
+\usepackage[spanish,es-tabla]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[spanish]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
 \usepackage{geometry}
-\geometry{margin=2.5cm}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
 
-\title{Hito 2: Preparación y gestión de datos}
-\author{Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es}) \\ Jose Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})}
+\geometry{margin=2.5cm}
+\setstretch{1.08}
+\setlist[itemize]{itemsep=0.2em, topsep=0.3em}
+\setlist[enumerate]{itemsep=0.2em, topsep=0.3em}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!50!black,
+  pdftitle={Memoria técnica del proyecto (versión incremental)},
+  pdfauthor={Alonso Marcos Muñoz; Jose Barros Ribademar}
+}
+
+\title{\textbf{Memoria técnica del proyecto (versión incremental)}}
+\author{
+\textbf{Asignatura:} Desarrollo y Despliegue de Soluciones Big Data \\
+\textbf{Máster:} Máster Universitario en Big Data y Computación en la Nube \\
+\textbf{Curso académico:} 2025--2026 \\
+\\
+Alonso Marcos Muñoz \\
+\texttt{Alonso.Marcos@alu.uclm.es} \\
+\\
+Jose Barros Ribademar \\
+\texttt{Jose.Barros1@alu.uclm.es}
+}
 \date{Marzo de 2026}
 
 \begin{document}
+
 \maketitle
+\tableofcontents
+\newpage
 
-\section{Datos de la entrega}
+\section*{Datos de la entrega}
+
 \begin{itemize}
-  \item Asignatura: DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA.
-  \item Máster: Máster Universitario en Big Data y Computación en la Nube.
-  \item Curso académico: 2025-2026.
+    \item Asignatura: \textbf{Desarrollo y Despliegue de Soluciones Big Data}.
+    \item Máster: \textbf{Máster Universitario en Big Data y Computación en la Nube}.
+    \item Curso académico: \textbf{2025--2026}.
+    \item Integrantes:
+    \begin{itemize}
+        \item Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es}).
+        \item Jose Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es}).
+    \end{itemize}
 \end{itemize}
 
-\section{Objetivo del hito}
-El objetivo de este hito es construir una base de datos fiable para modelado, resolviendo carga, validación, trazabilidad y preparación de tablas para entrenamiento.
+\section{Índice incremental de hitos}
 
-\section{Alcance técnico}
-El trabajo se organiza en cuatro bloques: entorno colaborativo en Databricks, ingesta en bronze, calidad en silver y construcción de features en gold. La ejecución se mantiene en modo batch para controlar complejidad y coste.
+Este documento mantiene la estructura acumulativa solicitada para la memoria final. En esta versión (entrega de Hito 2), el contenido queda organizado de la siguiente forma:
 
-\section{Diseño de datos previsto}
-\subsection{Capa bronze}
-Conservación del dato en bruto con metadatos de auditoría (ingestión, origen y registros rescatados por errores de esquema).
+\begin{enumerate}
+    \item Hito 1: Alcance y viabilidad (contenido consolidado).
+    \item Hito 2: Preparación y gestión de datos (contenido añadido en esta entrega).
+    \item Hito 3: Modelado y experimentación (apartado reservado).
+    \item Hito 4: Despliegue y monitorización (apartado reservado).
+\end{enumerate}
 
-\subsection{Capa silver}
-Aplicación de reglas de calidad (nulos, rangos, tipos y coherencia temporal) y envío de anomalías a cuarentena para análisis.
+\section{Hito 1: Alcance y viabilidad}
 
-\subsection{Capa gold}
-Construcción de variables dinámicas y estáticas para generar una tabla base de modelado para el Hito 3.
+\subsection{Introducción del hito}
 
-\section{Plan de ejecución}
+El primer hito cerró el alcance del proyecto antes de entrar en implementación. En esta fase se definió el problema de negocio, se justificó la elección de una arquitectura de datos distribuida y se evaluó la viabilidad técnica, económica y de cumplimiento.
+
+La fecha oficial de cierre de este hito fue el \textbf{27 de febrero de 2026}.
+
+\subsection{Definición del problema de negocio}
+
+El caso de uso aborda churn en una operadora de telecomunicaciones con 2.000.000 de clientes. El escenario de partida considera una rotación mensual del 3\% (60.000 bajas/mes), con impacto económico en dos líneas:
+
 \begin{itemize}
-  \item Semana 1: entorno, permisos, estructura de trabajo y primera carga.
-  \item Semana 2: reglas de calidad y cuarentena.
-  \item Semana 3: tablas gold y validación final.
+    \item Fugas recuperables no evitadas: 40.000 clientes/mes x 100 EUR = \textbf{4.000.000 EUR/mes}.
+    \item Incentivos mal asignados: 100.000 clientes/mes x 10 EUR = \textbf{1.000.000 EUR/mes}.
 \end{itemize}
 
-Reparto en pareja: Alonso en pipeline y trazabilidad; Jose en calidad de datos y validación de variables; decisiones y memoria en conjunto.
+El impacto mensual estimado asciende a \textbf{5.000.000 EUR/mes}.
 
-\section{Riesgos y mitigación}
+\subsection{Selección de solución técnica}
+
+Se evaluaron tres enfoques: reglas heurísticas, ML monolítico y arquitectura big data distribuida. La opción seleccionada fue arquitectura medallion en Databricks, por escalabilidad, trazabilidad y capacidad de evolución técnica.
+
+\subsection{Viabilidad y valor}
+
+En el escenario conservador fijado en Hito 1 se planteó una mejora del 5\% en fugas recuperables y del 5\% en incentivos mal asignados, con beneficio potencial de \textbf{250.000 EUR/mes}.
+
+Con un coste mensual estimado de 11.100 EUR, el caso quedó justificado para continuar con la implementación técnica en el Hito 2.
+
+\subsection{Cierre del Hito 1}
+
+El Hito 1 dejó cerrados el problema, la decisión arquitectónica y los objetivos medibles que guían el resto del proyecto.
+
+\section{Hito 2: Preparación y gestión de datos}
+
+\subsection{Objetivo del hito}
+
+Este hito transforma el alcance del Hito 1 en una plataforma de datos ejecutable, reproducible y preparada para modelado. El objetivo no fue únicamente ``tener scripts'', sino demostrar que el proyecto podía desplegarse y ejecutarse de extremo a extremo en Databricks, con resultados estables y trazables.
+
+La estrategia de trabajo se planteó de forma incremental: primero estabilizar entorno y bundle, después cerrar la arquitectura medallion por capas y, finalmente, incorporar una orquestación final tipo producción para dejar lista la transición hacia el Hito 3.
+
+\subsection{Implementación en Databricks}
+
+La implementación se apoya en:
 \begin{itemize}
-  \item Esquemas inestables: validaciones tempranas y versionado.
-  \item Falta de cobertura de variables: análisis de completitud antes de cerrar gold.
-  \item Retraso de integración: priorización de MVP completo y ampliación incremental.
+    \item \texttt{codigo/databricks.yml} (configuración del bundle),
+    \item \texttt{codigo/resources/telco\_churn.pipeline.yml} (pipeline),
+    \item \texttt{codigo/resources/telco\_churn.job.yml} (job final de orquestación).
 \end{itemize}
 
-\section{Resultado esperado}
-Al cierre del hito debe existir un pipeline ejecutable, tablas documentadas y dataset consistente para entrenamiento del modelo de churn.
+En esta fase se consolidó un único workspace operativo para evitar problemas de cuota y permisos del entorno inicial. Sobre ese workspace se normalizó la estructura de gobierno:
+\begin{itemize}
+    \item catálogo: \texttt{workspace},
+    \item esquema: \texttt{workspace.telco\_churn},
+    \item volumen de entrada: \texttt{/Volumes/workspace/telco\_churn/landing\_zone}.
+\end{itemize}
+
+También se añadieron descripciones visibles en catálogo, esquema, volumen y pipeline para facilitar trazabilidad funcional desde la UI de Databricks.
+
+Durante el despliegue se resolvió la incidencia \texttt{413 Request Entity Too Large}, separando de forma estricta código versionable y artefacto generado. En la práctica, se excluyeron del \texttt{sync} del bundle los directorios de datos masivos y los logs de generación, permitiendo estabilizar \texttt{validate/deploy} para ambos integrantes del equipo.
+
+\subsection{Fuentes e ingestión de datos}
+
+La generación de datos se realiza con \texttt{codigo/src/medallion\_pipeline/utilities/generate.py}, que produce datos de contexto, uso, interacciones y etiquetas.
+
+Este generador no se utilizó como un ejemplo mínimo: se ejecutó en volumen suficiente para reproducir un escenario exigente de procesamiento. El objetivo era validar comportamiento real de pipeline bajo carga, no solo confirmar una prueba funcional ligera.
+
+Desde el punto de vista temporal, en Hito 2 se mantuvo separación explícita entre histórico y producción simulada:
+\begin{itemize}
+    \item \texttt{events/*} como histórico de entrenamiento (2023--2024),
+    \item \texttt{source\_buffer/*} como bloque 2025 con deriva.
+\end{itemize}
+
+Esta decisión evita fuga temporal de información y mantiene coherencia metodológica para el modelado posterior.
+
+\subsection{Arquitectura medallion ejecutada}
+
+\paragraph{Capa bronze}
+La capa bronze (\texttt{01\_bronze\_ingestion.py}) prioriza robustez de entrada y trazabilidad. Se combinó batch para el maestro de clientes y Auto Loader en streaming para eventos. Se publican \texttt{bronze\_customers}, \texttt{bronze\_usage}, \texttt{bronze\_labels} y \texttt{bronze\_interactions}, manteniendo metadatos de auditoría (\texttt{ingestion\_timestamp}, \texttt{source\_file}) y tolerancia ante variaciones de esquema.
+
+\paragraph{Capa silver}
+La capa silver (\texttt{02\_silver\_transformation.py}) concentra control de calidad y estructuración analítica. Se materializan \texttt{silver\_customers\_history} (SCD2 con AUTO CDC), \texttt{silver\_churn\_events}, \texttt{silver\_interactions\_clean} y las tablas de cuarentena por entidad.
+
+Durante la estabilización aparecieron problemas de memoria en joins streaming exigentes. La mitigación aplicada fue rediseñar el flujo crítico hacia patrón stream-static en la unificación de eventos, manteniendo la lógica funcional pero reduciendo presión de estado.
+
+\paragraph{Capa gold}
+La capa gold se separó en tres scripts para mantener modularidad:
+\begin{itemize}
+    \item \texttt{03\_gold\_churn\_spine.py},
+    \item \texttt{03\_gold\_customer\_profile.py},
+    \item \texttt{03\_gold\_customer\_aggregations.py}.
+\end{itemize}
+
+Este diseño replica el patrón del proyecto de referencia del profesor, adaptado al caso Telco Churn. Además, se dejaron declaradas claves primarias temporales (\texttt{PRIMARY KEY ... TIMESERIES}) en las tablas gold orientadas a Feature Store, para evitar rehacer estructura cuando se disponga de licencia completa.
+
+\subsection{Calidad de datos en silver}
+
+Las reglas se centralizan en \texttt{codigo/src/medallion\_pipeline/rules/customers.py}, evitando lógica duplicada y facilitando mantenimiento. Este enfoque permitió ajustar validaciones por entidad sin introducir divergencias entre flujos.
+
+El resultado práctico es una separación explícita entre dato válido e inválido, con cuarentena trazable por dominio. Este punto fue relevante porque permitió depurar incidencias de calidad sin bloquear la actualización completa del pipeline.
+
+\subsection{Incidencias y mitigaciones aplicadas}
+
+Durante el hito se resolvieron incidencias técnicas relevantes:
+
+\begin{itemize}
+    \item \texttt{ImportError} por imports relativos en runtime del pipeline, corregido con imports robustos y fallback en silver.
+    \item \texttt{UNRESOLVED\_COLUMN} en AUTO CDC por referencia inválida a \texttt{\_rescued\_data}.
+    \item \texttt{CANNOT\_CHANGE\_DATASET\_TYPE} al refactorizar una tabla gold, resuelto manteniendo compatibilidad de tipo.
+    \item eventos \texttt{OUT\_OF\_MEMORY} en ejecuciones largas, mitigados con ajuste de diseño de joins/flows.
+    \item \texttt{413 Request Entity Too Large} en \texttt{bundle deploy}, mitigado con \texttt{sync.exclude} para artefactos generados.
+\end{itemize}
+
+La forma de trabajo aplicada fue siempre la misma: aislar causa raíz, aplicar ajuste mínimo seguro y validar en ejecución completa. Este ciclo iterativo fue clave para cerrar el hito con una plataforma estable y no con una solución teórica.
+
+\subsection{Orquestación final del hito}
+
+Se creó un job final de orquestación en dos tareas:
+\begin{enumerate}
+    \item ejecución de pipeline medallion,
+    \item ejecución del notebook \texttt{codigo/notebooks/04\_Feature\_Store\_Registration.py}.
+\end{enumerate}
+
+El notebook final se adaptó para ejecutarse en modo simulación de Feature Store, ya que Free Edition no permite desplegar Lakebase/Online Feature Store. Aun así, el cuaderno valida la presencia de tablas gold, deja trazas de ejecución y conserva comentado el bloque de código real para activación futura.
+
+También se configuraron notificaciones de éxito y fallo en el propio job para ambos integrantes, de manera que la operación quede monitorizada sin revisión manual continua.
+
+\subsection{Limpieza y gobierno del entorno}
+
+Como parte del cierre de Hito 2 se eliminaron recursos antiguos en desuso para evitar ambigüedad operativa. Se mantuvieron exclusivamente los objetos oficiales en \texttt{workspace.telco\_churn}, simplificando la operación y la defensa técnica del proyecto.
+
+\subsection{Estado de cierre del Hito 2}
+
+El cierre técnico queda validado con:
+\begin{itemize}
+    \item pipeline en estado \texttt{COMPLETED} (\texttt{update\_id}: \texttt{aae8711c-6d5f-4502-b237-41f6b738c0e6}),
+    \item job de orquestación en \texttt{SUCCESS} (\texttt{run\_id}: \texttt{640253146512278}),
+    \item tablas medallion materializadas en \texttt{workspace.telco\_churn}.
+\end{itemize}
+
+Con esto, Hito 2 queda cerrado con una base de datos estable, gobernada y completamente ejecutable. La transición al Hito 3 puede iniciarse sin rehacer ingeniería de datos y con trazabilidad suficiente de decisiones técnicas y operativas.
+
+\section{Hito 3: Modelado y experimentación (apartado reservado)}
+
+Sección reservada para la siguiente entrega. Se completará con diseño experimental, selección de modelo, métricas, validación y análisis de sesgo.
+
+\section{Hito 4: Despliegue y monitorización (apartado reservado)}
+
+Sección reservada para la última entrega. Se completará con estrategia de despliegue, monitorización técnica y de negocio, operación y cierre final.
 
 \end{document}

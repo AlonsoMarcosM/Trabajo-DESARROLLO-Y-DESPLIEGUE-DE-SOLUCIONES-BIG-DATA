@@ -1,32 +1,15 @@
 """
-Silver Layer — Telco Churn (Medallion Architecture)
-=====================================================
-Reads from Bronze Delta tables, applies quality rules (expectations),
-routes invalid records to quarantine (Dead Letter Queue), and produces
-clean Silver tables plus a unified usage+label fact stream.
+Silver layer transformation for Telco Churn.
 
-Tables produced
----------------
-silver_customers_quarantine    | DLQ for invalid customer records
-silver_customers               | Clean customer stream (append-only)
-silver_usage_quarantine        | DLQ for invalid usage records
-silver_usage                   | Clean usage events (append-only)
-silver_labels_quarantine       | DLQ for invalid label records
-silver_labels                  | Clean churn labels (append-only)
-silver_interactions_quarantine | DLQ for invalid interaction records
-silver_interactions            | Clean interaction events (append-only)
-silver_usage_with_labels       | Unified fact: usage enriched with churn labels
-                                 (stream-stream join with watermark)
+Pattern aligned with professor example:
+- quarantine tables per entity
+- clean views for valid records
+- AUTO CDC SCD2 for customer history
+- stream-stream join with watermark for usage + labels
 """
 
-###############################################################################
-# Imports
-###############################################################################
-
 import pyspark.pipelines as dp
-from pyspark.sql.functions import col, current_timestamp, expr, to_timestamp
-from pyspark.sql.types import BooleanType
-from functools import reduce
+from pyspark.sql.functions import col, coalesce, expr, to_timestamp
 
 try:
     from rules import (
@@ -36,39 +19,34 @@ try:
         get_interaction_rules,
     )
 except Exception:
-    # Lakeflow scripts may run without local package resolution;
-    # keep an inline fallback so the pipeline remains executable.
     def get_customer_rules():
         return {
-            "valid_customer_id":    "customer_id IS NOT NULL",
-            "valid_age":            "age > 0 AND age < 120",
-            "valid_contract_type":  "contract_type IN ('monthly', 'annual')",
-            "valid_monthly_fee":    "monthly_fee >= 0",
+            "valid_customer_id": "customer_id IS NOT NULL",
+            "valid_age": "age > 0 AND age < 120",
+            "valid_contract_type": "contract_type IN ('monthly', 'annual')",
+            "valid_monthly_fee": "monthly_fee >= 0",
         }
-
 
     def get_usage_rules():
         return {
-            "valid_customer_id":        "customer_id IS NOT NULL",
-            "valid_year_month":         "year_month IS NOT NULL",
-            "valid_data_consumed":      "data_consumed_gb >= 0",
-            "valid_call_minutes":       "call_minutes >= 0",
-            "valid_bill_amount":        "bill_amount >= 0",
+            "valid_customer_id": "customer_id IS NOT NULL",
+            "valid_year_month": "year_month IS NOT NULL",
+            "valid_data_consumed": "data_consumed_gb >= 0",
+            "valid_call_minutes": "call_minutes >= 0",
+            "valid_bill_amount": "bill_amount >= 0",
         }
-
 
     def get_label_rules():
         return {
-            "valid_customer_id":        "customer_id IS NOT NULL",
-            "valid_year_month":         "year_month IS NOT NULL",
+            "valid_customer_id": "customer_id IS NOT NULL",
+            "valid_year_month": "year_month IS NOT NULL",
         }
-
 
     def get_interaction_rules():
         return {
-            "valid_customer_id":        "customer_id IS NOT NULL",
-            "valid_timestamp":          "timestamp IS NOT NULL",
-            "valid_interaction_type":   (
+            "valid_customer_id": "customer_id IS NOT NULL",
+            "valid_timestamp": "timestamp IS NOT NULL",
+            "valid_interaction_type": (
                 "interaction_type IN ("
                 "'call_center_inquiry', 'call_center_complaint', 'online_chat',"
                 "'store_visit', 'plan_upgrade', 'plan_downgrade', 'plan_renewal',"
@@ -78,260 +56,257 @@ except Exception:
             ),
         }
 
-###############################################################################
-# Helpers
-###############################################################################
 
-def build_quarantine_flag(rules: dict):
-    """
-    Returns a Spark Column that evaluates to True when ANY rule is violated.
-    Dynamically combines all rule expressions with AND, then negates.
-    """
-    combined = reduce(
-        lambda a, b: a & b,
-        [expr(condition) for condition in rules.values()]
-    )
-    return (~combined).cast(BooleanType()).alias("is_quarantined")
+# ---------------------------------------------------------------------------
+# 1) Customers: quarantine + AUTO CDC SCD2 history
+# ---------------------------------------------------------------------------
 
+cust_quarantine_table = "silver_quarantine_customers"
+cust_tmp_eval = "tmp_eval_customers"
+cust_clean_view = "vw_clean_customers"
+cust_quarantine_flow = "flow_quarantine_customers"
+cust_history_table = "silver_customers_history"
 
-###############################################################################
-# 1. CUSTOMERS — quarantine + clean append
-###############################################################################
+cust_rules = get_customer_rules()
+cust_expr = "NOT (" + " AND ".join(cust_rules.values()) + ")"
 
-# 1a. Quarantine table (DLQ)
-dp.create_streaming_table(name="silver_customers_quarantine")
+dp.create_streaming_table(name=cust_quarantine_table)
 
 
-# 1b. Routing hub — temporary table, not persisted to disk
-@dp.table(
-    name      = "bronze_customers_hub",
-    temporary = True,
-)
-@dp.expect_all(get_customer_rules())
-def bronze_customers_hub():
-    rules = get_customer_rules()
+@dp.table(name=cust_tmp_eval, temporary=True)
+@dp.expect_all(cust_rules)
+def eval_customers():
     return (
         spark.readStream
-             .format("delta")
              .option("skipChangeCommits", "true")
              .table("bronze_customers")
-             .withColumn("is_quarantined", build_quarantine_flag(rules))
+             .withColumn("customer_sequence_at", coalesce(to_timestamp(col("customer_updated_at")), col("ingestion_timestamp")))
+             .withColumn("is_quarantined", expr(cust_expr))
     )
 
 
-# 1c. Invalid records → quarantine
-@dp.append_flow(target="silver_customers_quarantine")
-def customers_to_quarantine():
+@dp.append_flow(target=cust_quarantine_table, name=cust_quarantine_flow)
+def quarantine_customers():
     return (
         spark.readStream
-             .table("bronze_customers_hub")
-             .filter(col("is_quarantined") == True)
+             .table(cust_tmp_eval)
+             .filter("is_quarantined = true")
              .drop("is_quarantined")
     )
 
 
-# 1d. Valid records → clean view (no extra materialisation)
-@dp.view(name="silver_customers_valid")
-def silver_customers_valid():
+@dp.view(name=cust_clean_view)
+def clean_customers():
     return (
         spark.readStream
-             .table("bronze_customers_hub")
-             .filter(col("is_quarantined") == False)
+             .table(cust_tmp_eval)
+             .filter("is_quarantined = false")
              .drop("is_quarantined")
     )
 
 
-# 1e. Clean customers table (append-only in current runtime profile).
-dp.create_streaming_table(name="silver_customers")
-
-
-@dp.append_flow(target="silver_customers")
-def customers_to_silver():
-    return spark.readStream.table("silver_customers_valid")
-
-
-###############################################################################
-# 2. USAGE — quarantine + clean append
-###############################################################################
-
-dp.create_streaming_table(name="silver_usage_quarantine")
-
-
-@dp.table(
-    name      = "bronze_usage_hub",
-    temporary = True,
+dp.create_streaming_table(
+    name=cust_history_table,
+    comment="SCD2 customer history maintained through AUTO CDC.",
 )
-@dp.expect_all(get_usage_rules())
-def bronze_usage_hub():
-    rules = get_usage_rules()
+
+
+dp.create_auto_cdc_flow(
+    target=cust_history_table,
+    source=cust_clean_view,
+    keys=["customer_id"],
+    sequence_by=col("customer_sequence_at"),
+    except_column_list=["ingestion_timestamp", "source_file", "customer_sequence_at"],
+    stored_as_scd_type="2",
+)
+
+
+# ---------------------------------------------------------------------------
+# 2) Usage: quarantine + clean view
+# ---------------------------------------------------------------------------
+
+usage_quarantine_table = "silver_quarantine_usage"
+usage_tmp_eval = "tmp_eval_usage"
+usage_clean_view = "vw_clean_usage"
+usage_quarantine_flow = "flow_quarantine_usage"
+
+usage_rules = get_usage_rules()
+usage_expr = "NOT (" + " AND ".join(usage_rules.values()) + ")"
+
+dp.create_streaming_table(name=usage_quarantine_table)
+
+
+@dp.table(name=usage_tmp_eval, temporary=True)
+@dp.expect_all(usage_rules)
+def eval_usage():
     return (
         spark.readStream
-             .format("delta")
              .option("skipChangeCommits", "true")
              .table("bronze_usage")
-             .withColumn("is_quarantined", build_quarantine_flag(rules))
+             .withColumn("is_quarantined", expr(usage_expr))
     )
 
 
-@dp.append_flow(target="silver_usage_quarantine")
-def usage_to_quarantine():
+@dp.append_flow(target=usage_quarantine_table, name=usage_quarantine_flow)
+def quarantine_usage():
     return (
         spark.readStream
-             .table("bronze_usage_hub")
-             .filter(col("is_quarantined") == True)
+             .table(usage_tmp_eval)
+             .filter("is_quarantined = true")
              .drop("is_quarantined")
     )
 
 
-@dp.view(name="silver_usage_valid")
-def silver_usage_valid():
+@dp.view(name=usage_clean_view)
+def clean_usage():
     return (
         spark.readStream
-             .table("bronze_usage_hub")
-             .filter(col("is_quarantined") == False)
+             .table(usage_tmp_eval)
+             .filter("is_quarantined = false")
              .drop("is_quarantined")
+             .withColumn("usage_event_time", to_timestamp(expr("concat(year_month, '-01 00:00:00')")))
     )
 
 
-dp.create_streaming_table(name="silver_usage")
+# ---------------------------------------------------------------------------
+# 3) Labels: quarantine + clean view
+# ---------------------------------------------------------------------------
+
+labels_quarantine_table = "silver_quarantine_labels"
+labels_tmp_eval = "tmp_eval_labels"
+labels_clean_view = "vw_clean_labels"
+labels_quarantine_flow = "flow_quarantine_labels"
+
+labels_rules = get_label_rules()
+labels_expr = "NOT (" + " AND ".join(labels_rules.values()) + ")"
+
+dp.create_streaming_table(name=labels_quarantine_table)
 
 
-@dp.append_flow(target="silver_usage")
-def usage_to_silver():
-    return spark.readStream.table("silver_usage_valid")
-
-
-###############################################################################
-# 3. LABELS — quarantine + clean append
-###############################################################################
-
-dp.create_streaming_table(name="silver_labels_quarantine")
-
-
-@dp.table(
-    name      = "bronze_labels_hub",
-    temporary = True,
-)
-@dp.expect_all(get_label_rules())
-def bronze_labels_hub():
-    rules = get_label_rules()
+@dp.table(name=labels_tmp_eval, temporary=True)
+@dp.expect_all(labels_rules)
+def eval_labels():
     return (
         spark.readStream
-             .format("delta")
              .option("skipChangeCommits", "true")
              .table("bronze_labels")
-             .withColumn("is_quarantined", build_quarantine_flag(rules))
+             .withColumn("label_available_date", to_timestamp(col("label_available_date")))
+             .withColumn("is_quarantined", expr(labels_expr))
     )
 
 
-@dp.append_flow(target="silver_labels_quarantine")
-def labels_to_quarantine():
+@dp.append_flow(target=labels_quarantine_table, name=labels_quarantine_flow)
+def quarantine_labels():
     return (
         spark.readStream
-             .table("bronze_labels_hub")
-             .filter(col("is_quarantined") == True)
+             .table(labels_tmp_eval)
+             .filter("is_quarantined = true")
              .drop("is_quarantined")
     )
 
 
-@dp.view(name="silver_labels_valid")
-def silver_labels_valid():
+@dp.view(name=labels_clean_view)
+def clean_labels():
     return (
         spark.readStream
-             .table("bronze_labels_hub")
-             .filter(col("is_quarantined") == False)
+             .table(labels_tmp_eval)
+             .filter("is_quarantined = false")
              .drop("is_quarantined")
     )
 
 
-dp.create_streaming_table(name="silver_labels")
+# ---------------------------------------------------------------------------
+# 4) Interactions: quarantine + clean table
+# ---------------------------------------------------------------------------
+
+interactions_quarantine_table = "silver_quarantine_interactions"
+interactions_tmp_eval = "tmp_eval_interactions"
+interactions_clean_view = "vw_clean_interactions"
+interactions_quarantine_flow = "flow_quarantine_interactions"
+interactions_clean_table = "silver_interactions_clean"
+
+interactions_rules = get_interaction_rules()
+interactions_expr = "NOT (" + " AND ".join(interactions_rules.values()) + ")"
+
+dp.create_streaming_table(name=interactions_quarantine_table)
+dp.create_streaming_table(name=interactions_clean_table)
 
 
-@dp.append_flow(target="silver_labels")
-def labels_to_silver():
-    return spark.readStream.table("silver_labels_valid")
-
-
-###############################################################################
-# 4. INTERACTIONS — quarantine + clean append
-###############################################################################
-
-dp.create_streaming_table(name="silver_interactions_quarantine")
-
-
-@dp.table(
-    name      = "bronze_interactions_hub",
-    temporary = True,
-)
-@dp.expect_all(get_interaction_rules())
-def bronze_interactions_hub():
-    rules = get_interaction_rules()
+@dp.table(name=interactions_tmp_eval, temporary=True)
+@dp.expect_all(interactions_rules)
+def eval_interactions():
     return (
         spark.readStream
-             .format("delta")
              .option("skipChangeCommits", "true")
              .table("bronze_interactions")
-             .withColumn("is_quarantined", build_quarantine_flag(rules))
+             .withColumn("timestamp", to_timestamp(col("timestamp")))
+             .withColumn("is_quarantined", expr(interactions_expr))
     )
 
 
-@dp.append_flow(target="silver_interactions_quarantine")
-def interactions_to_quarantine():
+@dp.append_flow(target=interactions_quarantine_table, name=interactions_quarantine_flow)
+def quarantine_interactions():
     return (
         spark.readStream
-             .table("bronze_interactions_hub")
-             .filter(col("is_quarantined") == True)
+             .table(interactions_tmp_eval)
+             .filter("is_quarantined = true")
              .drop("is_quarantined")
     )
 
 
-@dp.view(name="silver_interactions_valid")
-def silver_interactions_valid():
+@dp.view(name=interactions_clean_view)
+def clean_interactions():
     return (
         spark.readStream
-             .table("bronze_interactions_hub")
-             .filter(col("is_quarantined") == False)
+             .table(interactions_tmp_eval)
+             .filter("is_quarantined = false")
              .drop("is_quarantined")
     )
 
 
-dp.create_streaming_table(name="silver_interactions")
+@dp.append_flow(target=interactions_clean_table, name="flow_silver_interactions_clean")
+def interactions_to_clean_table():
+    return spark.readStream.table(interactions_clean_view)
 
 
-@dp.append_flow(target="silver_interactions")
-def interactions_to_silver():
-    return spark.readStream.table("silver_interactions_valid")
+# ---------------------------------------------------------------------------
+# 5) Unified events: stream-stream join (usage + labels)
+# ---------------------------------------------------------------------------
 
+churn_events_table = "silver_churn_events"
+churn_events_flow = "flow_silver_churn_events"
 
-###############################################################################
-# 5. UNIFIED FACT TABLE (batch)
-#    usage LEFT JOIN labels ON customer_id + year_month
-###############################################################################
-
-@dp.table(
-    name    = "silver_usage_with_labels_batch",
-    comment = """
-    **Silver layer** - unified fact table.
-
-    Batch join between clean usage rows and labels.
-    This avoids stream-stream join constraints in triggered updates.
-    """,
+dp.create_streaming_table(
+    name=churn_events_table,
+    comment="Unified silver events: usage enriched with churn labels using stream-stream join.",
 )
-def silver_usage_with_labels_batch():
-    usage = spark.read.table("silver_usage")
 
-    labels = (
+
+@dp.append_flow(target=churn_events_table, name=churn_events_flow)
+def silver_churn_events():
+    # Stream-static join reduces state pressure vs stream-stream join.
+    df_usage = spark.readStream.table(usage_clean_view).alias("u")
+
+    df_labels = (
         spark.read
-             .table("silver_labels")
-             .select("customer_id", "year_month", "churn_date", "label_available_date")
+             .table("bronze_labels")
              .withColumn("label_available_date", to_timestamp(col("label_available_date")))
+             .select("customer_id", "year_month", "churn_date", "label_available_date")
+             .alias("l")
     )
 
     return (
-        usage.join(
-            labels,
-            on  = ["customer_id", "year_month"],
-            how = "left",
+        df_usage.join(
+            df_labels,
+            on=[
+                col("u.customer_id") == col("l.customer_id"),
+                col("u.year_month") == col("l.year_month"),
+            ],
+            how="leftOuter",
         )
-        .withColumn("silver_ingestion_timestamp", current_timestamp())
+        .select(
+            col("u.*"),
+            col("l.churn_date"),
+            col("l.label_available_date"),
+        )
     )

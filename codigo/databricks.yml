@@ -18,10 +18,10 @@ variables:
     default: workspace
   uc_schema:
     description: "Unity Catalog schema where the pipeline publishes tables"
-    default: default
+    default: telco_churn
   landing_volume_path:
     description: "Volume root path with generated input data"
-    default: /Volumes/workspace/default/landing_zone
+    default: /Volumes/workspace/telco_churn/landing_zone
 
 targets:
   dev:

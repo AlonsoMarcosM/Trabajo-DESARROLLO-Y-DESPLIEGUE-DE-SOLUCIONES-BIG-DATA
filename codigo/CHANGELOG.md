@@ -3,6 +3,46 @@
 Este documento resume los cambios funcionales y el estado tecnico del proyecto
 en Databricks, centrado en la carpeta `codigo/`.
 
+## 2026-03-14 - Alineacion final Hito 2 y ejecucion completa
+
+### Resumen ejecutivo
+
+- Pipeline alineada a estructura del ejemplo del profesor (bronze/silver/gold por capas y ficheros separados).
+- Migracion funcional a `workspace.telco_churn` (esquema dedicado con descripcion).
+- Volume dedicado `workspace.telco_churn.landing_zone` con descripcion.
+- Ejecucion `full refresh` completada en workspace objetivo.
+
+### Estado validado (workspace objetivo)
+
+- `pipeline_id`: `e9417948-9ced-41ae-a21a-8fcfd9994e37`
+- Update `COMPLETED`: `aae8711c-6d5f-4502-b237-41f6b738c0e6` (2026-03-14)
+- Catalog/esquema: `workspace.telco_churn`
+- Volume de entrada: `/Volumes/workspace/telco_churn/landing_zone`
+- Job orquestado Hito 2: `992681729800259`
+- Run del job validada en `SUCCESS`: `640253146512278`
+
+### Cambios de arquitectura aplicados
+
+- `01_bronze_ingestion.py`
+  - bronze en patron Medallion con `bronze_customers`, `bronze_usage`, `bronze_labels`, `bronze_interactions`.
+- `02_silver_transformation.py`
+  - cuarentenas por entidad.
+  - historial SCD2 `silver_customers_history` con AUTO CDC.
+  - ajuste de `silver_churn_events` a join stream-static para evitar sobrecarga de estado.
+- Gold separada en 3 scripts:
+  - `03_gold_churn_spine.py`
+  - `03_gold_customer_profile.py`
+  - `03_gold_customer_aggregations.py`
+
+### Incidencias y mitigacion en esta iteracion
+
+- `UNRESOLVED_COLUMN` por `_rescued_data` en AUTO CDC:
+  - se elimino de `except_column_list` en clientes.
+- `CANNOT_CHANGE_DATASET_TYPE` en `gold_customer_aggregations`:
+  - se mantuvo tipo `STREAMING_TABLE` para compatibilidad del dataset existente.
+- Ejecuciones largas con `OUT_OF_MEMORY` en joins de streams:
+  - rediseño de joins en silver/gold para reducir estado y estabilizar update.
+
 ## 2026-03-11 - Estado consolidado Hito 2
 
 ### Resumen ejecutivo

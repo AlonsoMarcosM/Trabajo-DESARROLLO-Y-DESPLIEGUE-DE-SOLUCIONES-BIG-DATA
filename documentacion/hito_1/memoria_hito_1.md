@@ -1,230 +1,112 @@
-﻿\documentclass[12pt,a4paper]{article}
+﻿# Hito 1: Alcance y viabilidad
 
-\usepackage[spanish]{babel}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{geometry}
-\usepackage{hyperref}
-\usepackage{amsmath}
-\usepackage{booktabs}
-\usepackage{longtable}
-\geometry{margin=2.5cm}
+## Datos de la entrega
 
-\title{\textbf{Hito 1: Alcance y viabilidad}}
-\author{
-\textbf{Asignatura:} Desarrollo y Despliegue de Soluciones Big Data \\
-\textbf{Máster:} Máster Universitario en Big Data y Computación en la Nube \\
-\textbf{Curso académico:} 2025--2026 \\
-\\
-Alonso Marcos Muñoz \\
-\texttt{Alonso.Marcos@alu.uclm.es} \\
-\\
-Jose Barros Ribademar \\
-\texttt{Jose.Barros1@alu.uclm.es}
-}
-\date{Febrero de 2026}
+- Asignatura: **Desarrollo y Despliegue de Soluciones Big Data**
+- Máster: **Máster Universitario en Big Data y Computación en la Nube**
+- Curso académico: **2025-2026**
+- Integrantes:
+  - Alonso Marcos Muñoz (`Alonso.Marcos@alu.uclm.es`)
+  - Jose Barros Ribademar (`Jose.Barros1@alu.uclm.es`)
+- Fecha de elaboración: **febrero de 2026**
 
-\begin{document}
+## Introducción del hito
 
-\maketitle
-\tableofcontents
-\newpage
+El objetivo de este primer hito es cerrar el alcance del proyecto con una justificación técnica y económica suficiente para sustentar su ejecución durante el resto de la asignatura. En esta fase no se plantea un prototipo parcial, sino una propuesta completa de trabajo que permita defender qué problema de negocio se pretende resolver, por qué una arquitectura de datos distribuida es adecuada y qué condiciones de viabilidad deben cumplirse para que el proyecto sea defendible en términos académicos y profesionales.
 
-\section*{Datos de la entrega}
+La memoria se ha redactado como documento de base para los siguientes hitos, de forma que cada decisión tomada en febrero de 2026 quede trazada con su hipótesis asociada y pueda validarse posteriormente con resultados de implementación. La fecha oficial de cierre del hito es el **27 de febrero de 2026**.
 
-\begin{itemize}
-    \item Asignatura: \textbf{DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA}
-    \item Máster: \textbf{Máster Universitario en Big Data y Computación en la Nube}
-    \item Curso académico: 2025--2026
-    \item Integrantes:
-    \begin{itemize}
-        \item Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es})
-        \item Jose Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})
-    \end{itemize}
-    \item Fecha de elaboración: febrero de 2026
-\end{itemize}
+## Alcance y viabilidad
 
-\section{Introducción del hito}
+### Definición del problema de negocio
 
-Este primer hito cierra el alcance del proyecto antes de entrar en la fase técnica de implementación. El objetivo no es solo describir el problema de negocio, sino justificar por qué tiene sentido abordarlo con una solución de datos, qué valor económico realista puede aportar y cómo se va a ejecutar con recursos limitados, en el calendario oficial de la asignatura.
+La empresa de telecomunicaciones analizada gestiona una cartera activa de 2.000.000 de clientes particulares en un mercado muy competitivo. En el escenario de partida se observa una rotación mensual del 3%, equivalente a 60.000 bajas cada mes. Esta dinámica refleja que las campañas generalistas de retención no están siendo suficientes para priorizar a los clientes con mayor probabilidad de abandono y mayor impacto económico.
 
-La propuesta se ha redactado con un enfoque deliberadamente alcanzable: empezar con una primera versión funcional (MVP) y evitar compromisos técnicos innecesarios para una entrega inicial. Esta decisión mantiene el equilibrio entre rigor académico, viabilidad de ejecución en pareja y potencial de mejora en los hitos siguientes.
+Desde el punto de vista financiero, el problema se concentra en dos frentes. Por un lado, se estima que 40.000 bajas mensuales son potencialmente recuperables y que cada cliente perdido supone, de media, 100 euros de margen neto anual no capturado. Por otro lado, la compañía aplica descuentos de forma poco precisa sobre una parte de clientes que no presenta riesgo real de fuga, lo que incrementa el coste comercial sin retorno proporcional.
 
-Fecha oficial de cierre del hito: \textbf{27 de febrero de 2026}.
+$$
+\text{Pérdida por fugas recuperables} = 40.000 \times 100 = 4.000.000\ \text{EUR/mes}
+$$
 
-\section{Alcance y viabilidad}
+$$
+\text{Coste por incentivos mal asignados} = 100.000 \times 10 = 1.000.000\ \text{EUR/mes}
+$$
 
-\subsection{Definición del problema de negocio}
+$$
+\text{Impacto económico mensual estimado} = 5.000.000\ \text{EUR/mes}
+$$
 
-La operadora de telecomunicaciones gestiona una base de datos activa de 2.000.000 de clientes particulares en un mercado altamente saturado. Actualmente, la compañía se enfrenta a una tasa de rotación mensual del 3\% (60.000 clientes abandonan la compañía cada mes), una hemorragia que las campañas de fidelización genéricas no logran detener.
+Este volumen de pérdida justifica abordar el problema con una solución analítica que permita identificar mejor el riesgo de churn y mejorar la asignación de incentivos.
 
-Esta falta de inteligencia comercial genera un impacto negativo por dos vías:
+### Análisis y selección de la solución técnica
 
-\begin{itemize}
-    \item \textbf{Fugas recuperables no evitadas}: 40.000 usuarios recuperables abandonan la compañía cada mes.  
-    Con un valor de vida promedio perdido por cliente de 100 euros de margen neto anual:
+Para resolver el caso se valoraron tres enfoques: reglas heurísticas, aprendizaje automático en entorno monolítico y arquitectura big data distribuida. El enfoque heurístico ofrece rapidez inicial, pero su mantenimiento crece de forma no lineal al aumentar la casuística y sufre cuando cambian los patrones de comportamiento. El enfoque monolítico con machine learning mejora la capacidad predictiva, aunque introduce limitaciones de escalabilidad, de trazabilidad operativa y de incorporación de nuevas fuentes en escenarios de mayor volumen.
 
-    \[
-    40.000 \times 100 = 4.000.000 \text{ EUR/mes}
-    \]
+La alternativa distribuida, basada en un pipeline de datos en Databricks con arquitectura medallion, se selecciona porque se ajusta mejor al tamaño de la base de clientes, permite evolucionar el sistema por capas (bronze, silver y gold) y facilita la gobernanza técnica del proyecto. Esta decisión no se fundamenta en complejidad tecnológica por sí misma, sino en su adecuación al problema y en su coherencia con los objetivos formativos de la asignatura.
 
-    \item \textbf{Incentivos mal asignados}: descuentos ofrecidos al 5\% de la base leal (100.000 clientes).  
-    Con coste medio de 10 euros por descuento:
+### Evaluación de la viabilidad
 
-    \[
-    100.000 \times 10 = 1.000.000 \text{ EUR/mes}
-    \]
-\end{itemize}
+#### Viabilidad técnica
 
-Pérdida total operativa:
+La viabilidad técnica se considera favorable por cuatro motivos. En primer lugar, existe masa crítica de datos para entrenar y evaluar modelos de clasificación supervisada. En segundo lugar, el problema tiene una definición clara de variable objetivo (baja/no baja) y un marco temporal razonable para construir etiquetas y ventanas de observación. En tercer lugar, se dispone de señales potencialmente explicativas, como antigüedad del cliente, uso de servicios, incidencias, facturación e historial de interacción comercial. En cuarto lugar, la ejecución en modo batch reduce el riesgo de implementación temprana y permite priorizar robustez, reproducibilidad y calidad del dato antes de plantear escenarios de inferencia más exigentes.
 
-\[
-4.000.000 + 1.000.000 = 5.000.000 \text{ EUR/mes}
-\]
+#### Viabilidad económica
 
-\subsection{Planteamiento y selección de la solución técnica}
+El escenario económico se ha planteado con hipótesis conservadoras para evitar sobreestimar el impacto. Si el sistema consigue reducir un 5% las fugas recuperables y, en paralelo, disminuir un 5% el coste de incentivos mal dirigidos, el beneficio mensual esperado sería de 250.000 euros.
 
-Se compararon tres alternativas: heurística por reglas, ML en servidor monolítico y arquitectura big data distribuida.
+$$
+\text{Beneficio por mejora en fugas} = 4.000.000 \times 0{,}05 = 200.000\ \text{EUR/mes}
+$$
 
-\begin{longtable}{p{4cm}p{2.5cm}p{2.5cm}p{3cm}}
-\toprule
-\textbf{Criterio de decisión} & \textbf{Heurística} & \textbf{ML monolítico} & \textbf{Big Data (MVP)} \\
-\midrule
-Escalabilidad con 2M clientes & Baja & Media & Alta \\
-Esfuerzo de mantenimiento & Alto & Medio & Medio \\
-Integración de nuevas fuentes & Baja & Media & Alta \\
-Trazabilidad & Baja & Media & Alta \\
-Riesgo de obsolescencia & Alto & Medio & Bajo \\
-\bottomrule
-\end{longtable}
+$$
+\text{Beneficio por mejora en incentivos} = 1.000.000 \times 0{,}05 = 50.000\ \text{EUR/mes}
+$$
 
-Se selecciona \textbf{Big Data distribuido} en versión mínima viable (MVP).
+$$
+\text{Beneficio total estimado} = 250.000\ \text{EUR/mes}
+$$
 
-\subsection{Evaluación de la viabilidad y valor}
+En cuanto a costes, se considera una carga mensual de 10.000 euros de dedicación técnica y 1.100 euros de infraestructura cloud, lo que sitúa el coste total en 11.100 euros al mes.
 
-\subsubsection{Viabilidad técnica}
+$$
+\text{ROI mensual} = \left(\frac{250.000 - 11.100}{11.100}\right)\times 100 = 2.152\%
+$$
 
-\begin{enumerate}
-    \item Masa crítica suficiente (2 millones de clientes activos).
-    \item Problema de clasificación supervisada natural.
-    \item Señales predictivas razonables: antigüedad, uso de servicios, incidencias, facturación, interacción con campañas.
-    \item Diseño batch que reduce riesgo de implementación inicial.
-\end{enumerate}
+$$
+\text{Payback aproximado} = \frac{11.100}{250.000}\times 30 = 1{,}3\ \text{días}
+$$
 
-\subsubsection{Viabilidad económica (escenario conservador)}
+Aunque estos resultados dependen de hipótesis que deberán contrastarse en los hitos de datos y modelado, el orden de magnitud obtenido muestra que el caso tiene sentido económico incluso en un escenario prudente.
 
-Pérdidas mensuales declaradas:
+#### Viabilidad ética y legal
 
-\begin{itemize}
-    \item Fugas recuperables: 4.000.000 EUR/mes
-    \item Incentivos mal asignados: 1.000.000 EUR/mes
-\end{itemize}
+La propuesta incorpora desde el inicio restricciones de cumplimiento alineadas con RGPD y con buenas prácticas de IA aplicada. Se prevé seudonimización de identificadores, control de accesos sobre datasets sensibles y trazabilidad de transformaciones y versiones de modelo. Además, se incluye evaluación de sesgo mediante métricas de equidad, con el objetivo de detectar desviaciones de rendimiento entre grupos y evitar decisiones comerciales sistemáticamente desfavorables para colectivos concretos.
 
-Escenario MVP:
+## Planificación y recursos
 
-\begin{itemize}
-    \item Reducción 5\% fuga recuperable: $4.000.000 \times 0,05 = 200.000$ EUR/mes
-    \item Reducción 5\% descuentos innecesarios: $1.000.000 \times 0,05 = 50.000$ EUR/mes
-\end{itemize}
+### Objetivos de negocio y traducción técnica
 
-\[
-\text{Beneficio total} = 200.000 + 50.000 = 250.000 \text{ EUR/mes}
-\]
+Los objetivos operativos para el proyecto son reducir en un 5% la pérdida asociada a fugas recuperables y reducir en un 5% el coste de incentivos innecesarios. Traducido a magnitudes de seguimiento mensual, esto implica pasar de 40.000 a 38.000 bajas recuperables y de 100.000 a 95.000 incentivos potencialmente mal asignados. En términos técnicos, estos objetivos se transforman en tres líneas de trabajo: mejorar la capacidad de detección temprana del riesgo de churn, aumentar la precisión de segmentación para campañas de retención y mantener estabilidad de pipeline para garantizar repetibilidad de resultados.
 
-Costes:
+### Organización del equipo
 
-\begin{itemize}
-    \item Equipo técnico: 10.000 EUR/mes
-    \item Infraestructura cloud: 1.100 EUR/mes
-\end{itemize}
+El trabajo se organiza en una estructura colaborativa de dos perfiles complementarios. Una parte se centra en ingeniería de datos y MLOps, abarcando ingesta, control de calidad, orquestación y trazabilidad del pipeline. La otra parte se orienta al modelado, incluyendo construcción de variables, entrenamiento, evaluación y análisis de error. Esta distribución no es rígida; se revisa de forma continua para equilibrar carga y acelerar resolución de incidencias.
 
-\[
-\text{Coste total} = 10.000 + 1.100 = 11.100 \text{ EUR/mes}
-\]
+### Fuentes de datos y stack tecnológico
 
-\[
-\text{ROI} = \left(\frac{250.000 - 11.100}{11.100}\right)\times 100 = 2152\%
-\]
+La solución se apoyará en cuatro fuentes funcionales: maestro de clientes, histórico de bajas, registros de uso y facturación, e histórico de campañas con respuesta observada. Sobre estas fuentes se implementará un pipeline en Databricks y Delta Lake, con procesamiento distribuido en Spark, modelado con Spark MLlib y seguimiento experimental mediante MLflow. El control de versiones y la coordinación del desarrollo se mantienen en GitHub para preservar trazabilidad técnica y facilitar auditoría del trabajo.
 
-\[
-\text{Payback} = \frac{11.100}{250.000}\times 30 = 1,3 \text{ días}
-\]
+### Cronograma oficial del proyecto
 
-\subsubsection{Viabilidad ética y legal}
+El calendario de la asignatura queda estructurado en cuatro hitos consecutivos:
 
-\begin{enumerate}
-    \item Seudonimización y control de accesos.
-    \item Trazabilidad de datasets y modelos.
-    \item Métrica de fairness: Equal Opportunity Difference.
-\end{enumerate}
+- Hito 1 (Alcance y viabilidad): del 24/02/2026 al 27/02/2026.
+- Hito 2 (Preparación y gestión de datos): del 28/02/2026 al 20/03/2026.
+- Hito 3 (Modelado y experimentación): del 21/03/2026 al 17/04/2026.
+- Hito 4 (Despliegue y monitorización): del 18/04/2026 al 01/05/2026.
 
-\subsection{Planificación y recursos}
+La planificación del presente documento está alineada con ese marco oficial.
 
-\subsubsection{KPIs de negocio y traducción técnica}
+## Cierre del hito
 
-\begin{itemize}
-    \item Reducir en 5\% la pérdida por fuga recuperable.
-    \item Reducir en 5\% el coste por incentivos innecesarios.
-\end{itemize}
-
-Estudios de referencia: \url{https://medium.com/%40avk8923/case-2-out-of-15-7fa38feff88c}
-
-Traducción a magnitudes operativas:
-
-\begin{itemize}
-    \item Fuga recuperable: 40.000 → 38.000 clientes/mes
-    \item Incentivos mal asignados: 100.000 → 95.000 clientes/mes
-\end{itemize}
-
-Metas técnicas iniciales:
-
-\begin{itemize}
-    \item Mejorar detección de clientes con riesgo real de baja
-    \item Incrementar precisión de campañas evitando descuentos innecesarios
-    \item Priorizar estabilidad y reproducibilidad frente a optimización agresiva
-\end{itemize}
-
-\subsubsection{Equipo de trabajo}
-
-\begin{itemize}
-    \item Ingeniería de datos/MLOps: ingesta, calidad de datos, orquestación y ejecución
-    \item Modelado: construcción de variables, entrenamiento, evaluación y análisis de error
-\end{itemize}
-
-\subsubsection{Fuentes y stack tecnológico}
-
-Fuentes mínimas:
-
-\begin{itemize}
-    \item Maestro de clientes
-    \item Histórico de bajas/churn
-    \item Uso de servicios y facturación
-    \item Histórico de campañas y respuesta
-\end{itemize}
-
-Stack tecnológico:
-
-\begin{itemize}
-    \item Databricks + Delta Lake
-    \item Spark (batch)
-    \item Spark MLlib
-    \item MLflow
-    \item GitHub
-\end{itemize}
-
-\subsubsection{Cronograma oficial del proyecto}
-
-\begin{itemize}
-    \item Hito 1: Alcance y viabilidad – 24/02/2026 a 27/02/2026
-    \item Hito 2: Preparación y gestión de datos – 28/02/2026 a 20/03/2026
-    \item Hito 3: Modelado y experimentación – 21/03/2026 a 17/04/2026
-    \item Hito 4: Despliegue y monitorización – 18/04/2026 a 01/05/2026
-\end{itemize}
-
-\section{Cierre del hito}
-
-El alcance queda cerrado con una propuesta coherente en las cuatro dimensiones exigidas: definición del problema, selección técnica razonada, viabilidad completa y planificación.
-
-La estrategia adoptada evita promesas difíciles de sostener y prioriza una entrega sólida, medible y defendible. El siguiente paso es ejecutar el hito 2 para validar calidad del dato y materializar la arquitectura en Databricks.
-
-\end{document}
+Con este hito queda definido un alcance técnicamente consistente y económicamente justificado para el proyecto de churn telco. La propuesta establece el problema de negocio, argumenta la elección arquitectónica, delimita condiciones de viabilidad y fija objetivos medibles para los siguientes entregables. El siguiente paso es ejecutar el Hito 2 con foco en preparación del dato, validación de calidad y materialización del pipeline medallion en el entorno de trabajo.
