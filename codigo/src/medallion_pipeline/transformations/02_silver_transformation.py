@@ -11,50 +11,22 @@ Pattern aligned with professor example:
 import pyspark.pipelines as dp
 from pyspark.sql.functions import col, coalesce, expr, to_timestamp
 
-try:
-    from rules import (
-        get_customer_rules,
-        get_usage_rules,
-        get_label_rules,
-        get_interaction_rules,
-    )
-except Exception:
-    def get_customer_rules():
-        return {
-            "valid_customer_id": "customer_id IS NOT NULL",
-            "valid_age": "age > 0 AND age < 120",
-            "valid_contract_type": "contract_type IN ('monthly', 'annual')",
-            "valid_monthly_fee": "monthly_fee >= 0",
-        }
+import sys
 
-    def get_usage_rules():
-        return {
-            "valid_customer_id": "customer_id IS NOT NULL",
-            "valid_year_month": "year_month IS NOT NULL",
-            "valid_data_consumed": "data_consumed_gb >= 0",
-            "valid_call_minutes": "call_minutes >= 0",
-            "valid_bill_amount": "bill_amount >= 0",
-        }
+from pyspark.sql import SparkSession
 
-    def get_label_rules():
-        return {
-            "valid_customer_id": "customer_id IS NOT NULL",
-            "valid_year_month": "year_month IS NOT NULL",
-        }
+spark = SparkSession.getActiveSession()
 
-    def get_interaction_rules():
-        return {
-            "valid_customer_id": "customer_id IS NOT NULL",
-            "valid_timestamp": "timestamp IS NOT NULL",
-            "valid_interaction_type": (
-                "interaction_type IN ("
-                "'call_center_inquiry', 'call_center_complaint', 'online_chat',"
-                "'store_visit', 'plan_upgrade', 'plan_downgrade', 'plan_renewal',"
-                "'technical_support', 'billing_dispute', 'cancellation_request',"
-                "'loyalty_offer_accepted', 'loyalty_offer_rejected', 'port_out_request'"
-                ")"
-            ),
-        }
+# Get the bundle root path injected by Databricks at runtime
+bundle_source_path = spark.conf.get("bundle.sourcePath")
+sys.path.append(bundle_source_path)
+
+from src.medallion_pipeline.rules.customers import (
+    get_customer_rules,
+    get_usage_rules,
+    get_label_rules,
+    get_interaction_rules,
+)
 
 
 # ---------------------------------------------------------------------------

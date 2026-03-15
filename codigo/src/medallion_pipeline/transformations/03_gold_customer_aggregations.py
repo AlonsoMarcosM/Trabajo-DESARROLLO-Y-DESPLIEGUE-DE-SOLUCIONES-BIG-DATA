@@ -20,15 +20,15 @@ gold_aggregations_properties = {"delta.enableChangeDataFeed": "true"}
 EPSILON = 1e-6
 
 gold_aggregations_schema = """
-    customer_id STRING NOT NULL,
+    customer_id STRING,
     year_month STRING,
-    window_end TIMESTAMP NOT NULL,
+    window_end TIMESTAMP,
     label_available_date TIMESTAMP,
-    label_will_churn INT,
+    label_will_churn INT NOT NULL,
     data_consumed_gb DOUBLE,
-    call_minutes DOUBLE,
+    call_minutes LONG,
     bill_amount DOUBLE,
-    days_payment_late INT,
+    days_payment_late LONG,
     nps_score DOUBLE,
     coverage_score DOUBLE,
     bill_vs_data_ratio DOUBLE,

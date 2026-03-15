@@ -12,6 +12,7 @@ resources:
         project_name: "Telco Churn"
         project_stage: "Hito 2"
         project_owner_team: "Alonso Marcos y Jose Barros"
+        bundle.sourcePath: ${workspace.file_path}
       libraries:
         - file:
             path: ../src/medallion_pipeline/transformations/01_bronze_ingestion.py
@@ -23,3 +24,5 @@ resources:
             path: ../src/medallion_pipeline/transformations/03_gold_customer_profile.py
         - file:
             path: ../src/medallion_pipeline/transformations/03_gold_customer_aggregations.py
+        - file:
+            path: ../src/medallion_pipeline/rules/customers.py
