@@ -194,19 +194,76 @@ Este split evita archivos monolíticos difíciles de mantener y permite evolucio
 
 Además, se dejó preparada la semántica de claves para una futura integración real con Online Feature Store: `gold_customer_profile` mantiene clave primaria temporal y `gold_customer_aggregations` también quedó declarada con `PRIMARY KEY (... TIMESERIES)`, de forma que cuando se disponga de licencia completa no haya que rehacer la base de modelado.
 
-### Reglas de calidad y robustez
+# Control de Calidad — Capa Silver
 
-Las reglas se centralizan en `codigo/src/medallion_pipeline/rules/customers.py` para evitar lógica duplicada y facilitar revisión funcional. Esta centralización también simplifica el mantenimiento: cuando una regla cambia, la actualización se realiza en un único punto y se propaga al flujo completo.
+## Centralización de reglas
+
+Las reglas de calidad se centralizan en `codigo/src/medallion_pipeline/rules/customers.py` para evitar lógica duplicada y facilitar la revisión funcional. Esta centralización simplifica el mantenimiento: cuando una regla cambia, la actualización se realiza en un único punto y se propaga automáticamente al flujo completo. Cada regla es una expresión SQL que debe evaluar a `TRUE` para que un registro se considere válido; los registros que no la superan son marcados con el flag `is_quarantined` en lugar de descartados, preservando trazabilidad.
+
+---
+
+## Reglas por entidad
+
+### Clientes (`get_customer_rules`)
+
+La entidad de clientes es el eje central del modelo de churn. Sus reglas buscan garantizar que cada registro represente a un cliente real e identificable, con datos de contrato y facturación coherentes.
+
+| Regla | Expresión SQL | Justificación |
+|-------|---------------|---------------|
+| `valid_customer_id` | `customer_id IS NOT NULL` | Sin identificador no es posible vincular el registro con ninguna otra entidad del modelo. Es la clave de integridad referencial del sistema. |
+| `valid_age` | `age > 0 AND age < 120` | Filtra edades biológicamente imposibles originadas por errores de ingesta o valores por defecto. El rango 1–119 cubre la totalidad de clientes reales posibles. |
+| `valid_contract_type` | `contract_type IN ('monthly', 'annual')` | El tipo de contrato determina la lógica de cálculo de churn. Valores fuera del dominio conocido indicarían un error de codificación upstream que podría distorsionar los modelos. |
+| `valid_monthly_fee` | `monthly_fee >= 0` | Una tarifa negativa es económicamente incoherente y señala un error de transformación. Se permite el valor cero para cubrir planes gratuitos o promocionales. |
+
+---
+
+### Uso (`get_usage_rules`)
+
+Los registros de uso son la principal fuente de señal de comportamiento del cliente. La calidad en esta entidad es crítica porque sus valores alimentan directamente las features del modelo predictivo.
+
+| Regla | Expresión SQL | Justificación |
+|-------|---------------|---------------|
+| `valid_customer_id` | `customer_id IS NOT NULL` | Necesario para asociar el consumo a un cliente concreto. Sin él el registro es inutilizable para el análisis. |
+| `valid_year_month` | `year_month IS NOT NULL` | El período de referencia es imprescindible para la agregación mensual y la construcción de la ventana temporal del modelo. |
+| `valid_data_consumed` | `data_consumed_gb >= 0` | El consumo de datos no puede ser negativo. Valores negativos apuntan a errores de medición o reversiones mal registradas. |
+| `valid_call_minutes` | `call_minutes >= 0` | Análogamente, los minutos de llamada son una magnitud no negativa. Un valor negativo indicaría un error en el sistema de medición. |
+| `valid_bill_amount` | `bill_amount >= 0` | El importe facturado debe ser cero o positivo. Importes negativos pueden deberse a abonos incorrectamente clasificados que contaminarían los ratios de facturación. |
+
+---
+
+### Etiquetas (`get_label_rules`)
+
+Las etiquetas representan la variable objetivo del modelo de churn. Su integridad es especialmente sensible: un error aquí no degrada la calidad del dato sino directamente la del entrenamiento.
+
+| Regla | Expresión SQL | Justificación |
+|-------|---------------|---------------|
+| `valid_customer_id` | `customer_id IS NOT NULL` | Una etiqueta sin cliente asociado no puede incorporarse al dataset de entrenamiento ni de evaluación. |
+| `valid_year_month` | `year_month IS NOT NULL` | La etiqueta de churn es inherentemente temporal. Sin período de referencia no es posible alinearla con las features del mes correspondiente. |
+
+---
+
+### Interacciones (`get_interaction_rules`)
+
+Los eventos de interacción enriquecen el perfil del cliente con señales de comportamiento cualitativo. La validación se centra en la coherencia del tipo de interacción, ya que determina cómo se agregan y ponderan los eventos en la capa gold.
+
+| Regla | Expresión SQL | Justificación |
+|-------|---------------|---------------|
+| `valid_customer_id` | `customer_id IS NOT NULL` | Sin cliente identificado la interacción no puede vincularse al historial correspondiente. |
+| `valid_timestamp` | `timestamp IS NOT NULL` | La ordenación temporal de las interacciones es necesaria para construir features de recencia y frecuencia. Sin timestamp el evento pierde su dimensión temporal. |
+| `valid_interaction_type` | `interaction_type IN (...)` | El tipo de interacción está codificado en un dominio cerrado de 13 valores. Cualquier valor fuera de este dominio indica un error de integración upstream y podría introducir categorías espurias en el modelo. |
+
+---
+
+## Robustez y resolución de incidencias
 
 En términos de robustez, el hito incluyó resolución de incidencias reales de plataforma y de código:
 
-- `ImportError: attempted relative import with no known parent package`
-- `UNRESOLVED_COLUMN` en AUTO CDC por referencia a `_rescued_data` no presente en clientes
-- `CANNOT_CHANGE_DATASET_TYPE` al refactorizar una tabla gold
-- Eventos `OUT_OF_MEMORY` en ejecuciones largas
+- `ImportError: attempted relative import with no known parent package` — originado por la ejecución de módulos fuera del contexto de paquete esperado por Python; resuelto mediante ajuste del `sys.path` en el entorno DLT.
+- `UNRESOLVED_COLUMN` en AUTO CDC por referencia a `_rescued_data` no presente en la entidad de clientes; resuelto condicionando la selección de columnas a las presentes en el esquema fuente.
+- `CANNOT_CHANGE_DATASET_TYPE` al refactorizar una tabla gold de tipo incorrecto; resuelto eliminando la tabla obsoleta antes del redespliegue.
+- Eventos `OUT_OF_MEMORY` en ejecuciones largas; mitigados ajustando el particionado y evitando materializaciones innecesarias en la capa de transformación.
 
-El enfoque aplicado fue pragmático: primero aislar causa raíz, después aplicar ajuste mínimo seguro y, finalmente, validar con ejecución completa. Este ciclo se repitió hasta alcanzar actualizaciones estables en `COMPLETED`.
-
+El enfoque aplicado fue pragmático: primero aislar la causa raíz, después aplicar el ajuste mínimo seguro y, finalmente, validar con ejecución completa. Este ciclo se repitió hasta alcanzar actualizaciones estables en estado `COMPLETED`.
 ### Orquestación final del hito
 
 Con la capa de datos estabilizada, cerramos el hito incorporando un job final de orquestación, equivalente en estructura al del proyecto de referencia:
@@ -235,9 +292,11 @@ El cierre técnico queda validado con:
 - Tablas medallion materializadas en `workspace.telco_churn`
 - Recursos antiguos del esquema previo limpiados para evitar ambigüedad operativa
 
+El DAG resultante refleja la linaje completa del pipeline, desde la ingesta en bronze hasta las tablas gold, con todas las tablas en estado `COMPLETED` y los flujos de cuarentena activos por entidad:
+ 
+![DAG del pipeline medallion — Hito 2](assets/dag_tablas.png)
+ 
 En términos académicos y técnicos, el objetivo del hito se considera cumplido: no solo existe código, sino una solución desplegada, ejecutada y trazable, con documentación reproducible tanto por CLI como por UI. Por tanto, Hito 2 queda cerrado con una base de datos estable y gobernada para iniciar Hito 3 sin rehacer ingeniería de datos.
-
----
 
 ## Hito 3: Modelado y experimentación (apartado reservado)
 

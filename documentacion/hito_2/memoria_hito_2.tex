@@ -9,7 +9,13 @@
 \usepackage{setspace}
 \usepackage{enumitem}
 \usepackage{xcolor}
+\PassOptionsToPackage{hyphens}{url}
 \usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
 
 \geometry{margin=2.5cm}
 \setstretch{1.08}
@@ -20,11 +26,11 @@
   colorlinks=true,
   linkcolor=black,
   urlcolor=blue!50!black,
-  pdftitle={Memoria técnica del proyecto (versión incremental)},
+  pdftitle={Memoria técnica incremental del proyecto (Hitos 1 y 2)},
   pdfauthor={Alonso Marcos Muñoz; Jose Barros Ribademar}
 }
 
-\title{\textbf{Memoria técnica del proyecto (versión incremental)}}
+\title{\textbf{Memoria técnica incremental del proyecto (Hitos 1 y 2)}}
 \author{
 \textbf{Asignatura:} Desarrollo y Despliegue de Soluciones Big Data \\
 \textbf{Máster:} Máster Universitario en Big Data y Computación en la Nube \\
@@ -57,165 +63,359 @@ Jose Barros Ribademar \\
     \end{itemize}
 \end{itemize}
 
-\section{Índice incremental de hitos}
-
-Este documento mantiene la estructura acumulativa solicitada para la memoria final. En esta versión (entrega de Hito 2), el contenido queda organizado de la siguiente forma:
-
-\begin{enumerate}
-    \item Hito 1: Alcance y viabilidad (contenido consolidado).
-    \item Hito 2: Preparación y gestión de datos (contenido añadido en esta entrega).
-    \item Hito 3: Modelado y experimentación (apartado reservado).
-    \item Hito 4: Despliegue y monitorización (apartado reservado).
-\end{enumerate}
-
+% ─────────────────────────────────────────────────────────────
 \section{Hito 1: Alcance y viabilidad}
+% ─────────────────────────────────────────────────────────────
 
 \subsection{Introducción del hito}
 
-El primer hito cerró el alcance del proyecto antes de entrar en implementación. En esta fase se definió el problema de negocio, se justificó la elección de una arquitectura de datos distribuida y se evaluó la viabilidad técnica, económica y de cumplimiento.
+El objetivo de este primer hito es cerrar el alcance del proyecto con una justificación técnica y económica suficiente para sustentar su ejecución durante el resto de la asignatura. En esta fase no se plantea un prototipo parcial, sino una propuesta completa de trabajo que permita defender qué problema de negocio se pretende resolver, por qué una arquitectura de datos distribuida es adecuada y qué condiciones de viabilidad deben cumplirse para que el proyecto sea defendible en términos académicos y profesionales.
 
-La fecha oficial de cierre de este hito fue el \textbf{27 de febrero de 2026}.
+La memoria se ha redactado como documento de base para los siguientes hitos, de forma que cada decisión tomada en febrero de 2026 quede trazada con su hipótesis asociada y pueda validarse posteriormente con resultados de implementación. La fecha oficial de cierre del hito es el \textbf{27 de febrero de 2026}.
 
-\subsection{Definición del problema de negocio}
+\subsection{Alcance y viabilidad}
 
-El caso de uso aborda churn en una operadora de telecomunicaciones con 2.000.000 de clientes. El escenario de partida considera una rotación mensual del 3\% (60.000 bajas/mes), con impacto económico en dos líneas:
+\subsubsection{Definición del problema de negocio}
 
-\begin{itemize}
-    \item Fugas recuperables no evitadas: 40.000 clientes/mes x 100 EUR = \textbf{4.000.000 EUR/mes}.
-    \item Incentivos mal asignados: 100.000 clientes/mes x 10 EUR = \textbf{1.000.000 EUR/mes}.
-\end{itemize}
+La empresa de telecomunicaciones analizada gestiona una cartera activa de 2.000.000 de clientes particulares en un mercado muy competitivo. En el escenario de partida se observa una rotación mensual del 3\%, equivalente a 60.000 bajas cada mes. Esta dinámica refleja que las campañas generalistas de retención no están siendo suficientes para priorizar a los clientes con mayor probabilidad de abandono y mayor impacto económico.
 
-El impacto mensual estimado asciende a \textbf{5.000.000 EUR/mes}.
+Desde el punto de vista financiero, el problema se concentra en dos frentes. Por un lado, se estima que 40.000 bajas mensuales son potencialmente recuperables y que cada cliente perdido supone, de media, 100 euros de margen neto anual no capturado. Por otro lado, la compañía aplica descuentos de forma poco precisa sobre una parte de clientes que no presenta riesgo real de fuga, lo que incrementa el coste comercial sin retorno proporcional.
 
-\subsection{Selección de solución técnica}
+\[
+\text{Pérdida por fugas recuperables} = 40.000 \times 100 = 4.000.000\ \text{EUR/mes}
+\]
 
-Se evaluaron tres enfoques: reglas heurísticas, ML monolítico y arquitectura big data distribuida. La opción seleccionada fue arquitectura medallion en Databricks, por escalabilidad, trazabilidad y capacidad de evolución técnica.
+\[
+\text{Coste por incentivos mal asignados} = 100.000 \times 10 = 1.000.000\ \text{EUR/mes}
+\]
 
-\subsection{Viabilidad y valor}
+\[
+\text{Impacto económico mensual estimado} = 5.000.000\ \text{EUR/mes}
+\]
 
-En el escenario conservador fijado en Hito 1 se planteó una mejora del 5\% en fugas recuperables y del 5\% en incentivos mal asignados, con beneficio potencial de \textbf{250.000 EUR/mes}.
+Este volumen de pérdida justifica abordar el problema con una solución analítica que permita identificar mejor el riesgo de churn y mejorar la asignación de incentivos.
 
-Con un coste mensual estimado de 11.100 EUR, el caso quedó justificado para continuar con la implementación técnica en el Hito 2.
+\subsubsection{Análisis y selección de la solución técnica}
+
+Para resolver el caso se valoraron tres enfoques: reglas heurísticas, aprendizaje automático en entorno monolítico y arquitectura big data distribuida. El enfoque heurístico ofrece rapidez inicial, pero su mantenimiento crece de forma no lineal al aumentar la casuística y sufre cuando cambian los patrones de comportamiento. El enfoque monolítico con machine learning mejora la capacidad predictiva, aunque introduce limitaciones de escalabilidad, de trazabilidad operativa y de incorporación de nuevas fuentes en escenarios de mayor volumen.
+
+La alternativa distribuida, basada en un pipeline de datos en Databricks con arquitectura medallion, se selecciona porque se ajusta mejor al tamaño de la base de clientes, permite evolucionar el sistema por capas (bronze, silver y gold) y facilita la gobernanza técnica del proyecto. Esta decisión no se fundamenta en complejidad tecnológica por sí misma, sino en su adecuación al problema y en su coherencia con los objetivos formativos de la asignatura.
+
+\subsubsection{Evaluación de la viabilidad}
+
+\paragraph{Viabilidad técnica}
+
+La viabilidad técnica se considera favorable por cuatro motivos. En primer lugar, existe masa crítica de datos para entrenar y evaluar modelos de clasificación supervisada. En segundo lugar, el problema tiene una definición clara de variable objetivo (baja/no baja) y un marco temporal razonable para construir etiquetas y ventanas de observación. En tercer lugar, se dispone de señales potencialmente explicativas, como antigüedad del cliente, uso de servicios, incidencias, facturación e historial de interacción comercial. En cuarto lugar, la ejecución en modo batch reduce el riesgo de implementación temprana y permite priorizar robustez, reproducibilidad y calidad del dato antes de plantear escenarios de inferencia más exigentes.
+
+\paragraph{Viabilidad económica}
+
+El escenario económico se ha planteado con hipótesis conservadoras para evitar sobreestimar el impacto. Si el sistema consigue reducir un 5\% las fugas recuperables y, en paralelo, disminuir un 5\% el coste de incentivos mal dirigidos, el beneficio mensual esperado sería de 250.000 euros.
+
+\[
+\text{Beneficio por mejora en fugas} = 4.000.000 \times 0{,}05 = 200.000\ \text{EUR/mes}
+\]
+
+\[
+\text{Beneficio por mejora en incentivos} = 1.000.000 \times 0{,}05 = 50.000\ \text{EUR/mes}
+\]
+
+\[
+\text{Beneficio total estimado} = 250.000\ \text{EUR/mes}
+\]
+
+En cuanto a costes, se considera una carga mensual de 10.000 euros de dedicación técnica y 1.100 euros de infraestructura cloud, lo que sitúa el coste total en 11.100 euros al mes.
+
+\[
+\text{ROI mensual} = \left(\frac{250.000 - 11.100}{11.100}\right)\times 100 = 2.152\%
+\]
+
+\[
+\text{Payback aproximado} = \frac{11.100}{250.000}\times 30 = 1{,}3\ \text{días}
+\]
+
+Aunque estos resultados dependen de hipótesis que deberán contrastarse en los hitos de datos y modelado, el orden de magnitud obtenido muestra que el caso tiene sentido económico incluso en un escenario prudente.
+
+\paragraph{Viabilidad ética y legal}
+
+La propuesta incorpora desde el inicio restricciones de cumplimiento alineadas con RGPD y con buenas prácticas de IA aplicada. Se prevé seudonimización de identificadores, control de accesos sobre datasets sensibles y trazabilidad de transformaciones y versiones de modelo. Además, se incluye evaluación de sesgo mediante métricas de equidad, con el objetivo de detectar desviaciones de rendimiento entre grupos y evitar decisiones comerciales sistemáticamente desfavorables para colectivos concretos.
+
+\subsection{Planificación y recursos}
+
+\subsubsection{Objetivos de negocio y traducción técnica}
+
+Los objetivos operativos para el proyecto son reducir en un 5\% la pérdida asociada a fugas recuperables y reducir en un 5\% el coste de incentivos innecesarios. Traducido a magnitudes de seguimiento mensual, esto implica pasar de 40.000 a 38.000 bajas recuperables y de 100.000 a 95.000 incentivos potencialmente mal asignados. En términos técnicos, estos objetivos se transforman en tres líneas de trabajo: mejorar la capacidad de detección temprana del riesgo de churn, aumentar la precisión de segmentación para campañas de retención y mantener estabilidad de pipeline para garantizar repetibilidad de resultados.
+
+\subsubsection{Organización del equipo}
+
+El trabajo se organiza en una estructura colaborativa de dos perfiles complementarios. Una parte se centra en ingeniería de datos y MLOps, abarcando ingesta, control de calidad, orquestación y trazabilidad del pipeline. La otra parte se orienta al modelado, incluyendo construcción de variables, entrenamiento, evaluación y análisis de error. Esta distribución no es rígida; se revisa de forma continua para equilibrar carga y acelerar resolución de incidencias.
+
+\subsubsection{Fuentes de datos y stack tecnológico}
+
+La solución se apoyará en cuatro fuentes funcionales: maestro de clientes, histórico de bajas, registros de uso y facturación, e histórico de campañas con respuesta observada. Sobre estas fuentes se implementará un pipeline en Databricks y Delta Lake, con procesamiento distribuido en Spark, modelado con Spark MLlib y seguimiento experimental mediante MLflow. El control de versiones y la coordinación del desarrollo se mantienen en GitHub para preservar trazabilidad técnica y facilitar auditoría del trabajo.
+
+\subsubsection{Cronograma oficial del proyecto}
+
+El calendario de la asignatura queda estructurado en cuatro hitos consecutivos: Hito 1 (Alcance y viabilidad) del 24/02/2026 al 27/02/2026; Hito 2 (Preparación y gestión de datos) del 28/02/2026 al 20/03/2026; Hito 3 (Modelado y experimentación) del 21/03/2026 al 17/04/2026; y Hito 4 (Despliegue y monitorización) del 18/04/2026 al 01/05/2026. La planificación del presente documento está alineada con ese marco oficial.
 
 \subsection{Cierre del Hito 1}
 
-El Hito 1 dejó cerrados el problema, la decisión arquitectónica y los objetivos medibles que guían el resto del proyecto.
+Con este hito queda definido un alcance técnicamente consistente y económicamente justificado para el proyecto de churn telco. La propuesta establece el problema de negocio, argumenta la elección arquitectónica, delimita condiciones de viabilidad y fija objetivos medibles para los siguientes entregables. El siguiente paso es ejecutar el Hito 2 con foco en preparación del dato, validación de calidad y materialización del pipeline medallion en el entorno de trabajo.
 
+% ─────────────────────────────────────────────────────────────
 \section{Hito 2: Preparación y gestión de datos}
+% ─────────────────────────────────────────────────────────────
 
 \subsection{Objetivo del hito}
 
-Este hito transforma el alcance del Hito 1 en una plataforma de datos ejecutable, reproducible y preparada para modelado. El objetivo no fue únicamente ``tener scripts'', sino demostrar que el proyecto podía desplegarse y ejecutarse de extremo a extremo en Databricks, con resultados estables y trazables.
+El objetivo real de este segundo hito ha sido pasar del diseño conceptual del Hito 1 a una implementación de datos que funcione de verdad en Databricks, con ejecución completa y repetible. En otras palabras, no se trataba solo de ``tener scripts'', sino de validar que el proyecto podía desplegarse, correr sin intervención manual y dejar un resultado coherente para el inicio de Hito 3.
 
-La estrategia de trabajo se planteó de forma incremental: primero estabilizar entorno y bundle, después cerrar la arquitectura medallion por capas y, finalmente, incorporar una orquestación final tipo producción para dejar lista la transición hacia el Hito 3.
+Para conseguirlo, el trabajo se organizó como un proceso incremental: primero estabilizamos el entorno de ejecución y el bundle, después cerramos la arquitectura medallion por capas, y finalmente incorporamos orquestación tipo producción (pipeline + notebook final), siguiendo el patrón del proyecto de referencia del profesor pero adaptado a nuestra temática de churn telco.
 
 \subsection{Implementación en Databricks}
 
-La implementación se apoya en:
+La implementación se articula en torno a Databricks Asset Bundles:
 \begin{itemize}
-    \item \texttt{codigo/databricks.yml} (configuración del bundle),
-    \item \texttt{codigo/resources/telco\_churn.pipeline.yml} (pipeline),
-    \item \texttt{codigo/resources/telco\_churn.job.yml} (job final de orquestación).
+    \item \path{codigo/databricks.yml} como punto de entrada de configuración,
+    \item \path{codigo/resources/telco_churn.pipeline.yml} para la definición del pipeline medallion,
+    \item \path{codigo/resources/telco_churn.job.yml} para la orquestación final en dos tareas.
 \end{itemize}
 
-En esta fase se consolidó un único workspace operativo para evitar problemas de cuota y permisos del entorno inicial. Sobre ese workspace se normalizó la estructura de gobierno:
+Una decisión importante de esta fase fue consolidar un único workspace operativo para evitar límites de cuota y problemas de permisos del entorno inicial. Sobre ese workspace se normalizó la capa de gobierno en Unity Catalog con una estructura explícita y descriptiva:
 \begin{itemize}
-    \item catálogo: \texttt{workspace},
-    \item esquema: \texttt{workspace.telco\_churn},
-    \item volumen de entrada: \texttt{/Volumes/workspace/telco\_churn/landing\_zone}.
+    \item Catálogo: \texttt{workspace},
+    \item Esquema operativo del proyecto: \texttt{workspace.telco\_churn},
+    \item Volumen de entrada: \texttt{/Volumes/workspace/telco\_churn/landing\_zone}.
 \end{itemize}
 
-También se añadieron descripciones visibles en catálogo, esquema, volumen y pipeline para facilitar trazabilidad funcional desde la UI de Databricks.
+Además de la estructura, se añadieron descripciones visibles en catálogo, esquema, volumen y pipeline para que cualquier miembro del equipo pueda entender rápidamente qué recurso es oficial y cuál no, directamente desde la UI de Databricks, sin tener que abrir código local.
 
-Durante el despliegue se resolvió la incidencia \texttt{413 Request Entity Too Large}, separando de forma estricta código versionable y artefacto generado. En la práctica, se excluyeron del \texttt{sync} del bundle los directorios de datos masivos y los logs de generación, permitiendo estabilizar \texttt{validate/deploy} para ambos integrantes del equipo.
+Durante la fase de despliegue apareció una incidencia crítica de operativa (\texttt{413 Request Entity Too Large}) al intentar sincronizar datos masivos junto con el bundle. La solución fue separar de forma estricta ``código versionable'' y ``artefacto generado'', excluyendo del \texttt{sync} los directorios de datos (\texttt{context/**}, \texttt{events/**}, \texttt{source\_buffer/**}) y logs de generación. Este ajuste fue clave para estabilizar \texttt{validate/deploy} y dejar un flujo reproducible para ambos integrantes del equipo.
 
-\subsection{Fuentes e ingestión de datos}
+\subsection{Fuentes de datos y ventana temporal}
 
-La generación de datos se realiza con \texttt{codigo/src/medallion\_pipeline/utilities/generate.py}, que produce datos de contexto, uso, interacciones y etiquetas.
+La generación de datos sintéticos se realiza con \path{codigo/src/medallion_pipeline/utilities/generate.py}. Este script crea el maestro de clientes (\texttt{context/customers.csv}), los eventos mensuales de uso, interacciones y etiquetas en \texttt{events/YYYY/MM/data.json}, y una zona adicional \texttt{source\_buffer} para datos de 2025 con deriva simulada de producción.
 
-Este generador no se utilizó como un ejemplo mínimo: se ejecutó en volumen suficiente para reproducir un escenario exigente de procesamiento. El objetivo era validar comportamiento real de pipeline bajo carga, no solo confirmar una prueba funcional ligera.
+En la práctica, el script genera un volumen de información suficientemente grande para tensionar la ejecución en Free Edition y obligar a tomar decisiones técnicas reales de rendimiento. Esto era un objetivo del hito: demostrar un escenario cercano a Big Data, no un ejemplo mínimo.
 
-Desde el punto de vista temporal, en Hito 2 se mantuvo separación explícita entre histórico y producción simulada:
+Desde el punto de vista temporal, en Hito 2 se decidió mantener una frontera clara entre histórico y producción simulada:
 \begin{itemize}
-    \item \texttt{events/*} como histórico de entrenamiento (2023--2024),
-    \item \texttt{source\_buffer/*} como bloque 2025 con deriva.
+    \item \texttt{events/*} se trata como histórico de entrenamiento (2023--2024),
+    \item \texttt{source\_buffer/*} se conserva como bloque de 2025 con deriva, útil para validación temporal posterior.
 \end{itemize}
 
-Esta decisión evita fuga temporal de información y mantiene coherencia metodológica para el modelado posterior.
+Esta separación evita mezclar periodos sin control y deja preparado el terreno para un Hito 3 metodológicamente correcto, especialmente en lo relativo a fuga temporal de información.
 
 \subsection{Arquitectura medallion ejecutada}
 
 \paragraph{Capa bronze}
-La capa bronze (\texttt{01\_bronze\_ingestion.py}) prioriza robustez de entrada y trazabilidad. Se combinó batch para el maestro de clientes y Auto Loader en streaming para eventos. Se publican \texttt{bronze\_customers}, \texttt{bronze\_usage}, \texttt{bronze\_labels} y \texttt{bronze\_interactions}, manteniendo metadatos de auditoría (\texttt{ingestion\_timestamp}, \texttt{source\_file}) y tolerancia ante variaciones de esquema.
+
+La capa bronze se implementa en \path{codigo/src/medallion_pipeline/transformations/01_bronze_ingestion.py}. Aquí priorizamos robustez de ingesta y trazabilidad sobre transformación avanzada. El diseño combina carga batch para contexto de cliente y Auto Loader en streaming para eventos de uso, etiquetas e interacciones.
+
+Como salida se materializan:
+\begin{itemize}
+    \item \texttt{bronze\_customers} (batch),
+    \item \texttt{bronze\_usage} (streaming),
+    \item \texttt{bronze\_labels} (streaming),
+    \item \texttt{bronze\_interactions} (streaming).
+\end{itemize}
+
+En esta capa se añadieron metadatos de auditoría (\texttt{ingestion\_timestamp}, \texttt{source\_file}) y tolerancia de esquema para evitar bloqueos ante cambios de estructura en JSON. Esto nos permitió mantener estabilidad de actualización incluso cuando el volumen de datos y el número de ficheros creció de forma notable.
 
 \paragraph{Capa silver}
-La capa silver (\texttt{02\_silver\_transformation.py}) concentra control de calidad y estructuración analítica. Se materializan \texttt{silver\_customers\_history} (SCD2 con AUTO CDC), \texttt{silver\_churn\_events}, \texttt{silver\_interactions\_clean} y las tablas de cuarentena por entidad.
 
-Durante la estabilización aparecieron problemas de memoria en joins streaming exigentes. La mitigación aplicada fue rediseñar el flujo crítico hacia patrón stream-static en la unificación de eventos, manteniendo la lógica funcional pero reduciendo presión de estado.
+La capa silver (\path{codigo/src/medallion_pipeline/transformations/02_silver_transformation.py}) fue el núcleo técnico del hito. Aquí se aplican reglas de calidad, se separa explícitamente el dato inválido y se construyen entidades listas para explotación analítica.
+
+Se materializan:
+\begin{itemize}
+    \item \texttt{silver\_customers\_history} (SCD2 con AUTO CDC),
+    \item \texttt{silver\_churn\_events},
+    \item \texttt{silver\_interactions\_clean},
+    \item Tablas de cuarentena:
+    \begin{itemize}
+        \item \texttt{silver\_quarantine\_customers},
+        \item \texttt{silver\_quarantine\_usage},
+        \item \texttt{silver\_quarantine\_labels},
+        \item \texttt{silver\_quarantine\_interactions}.
+    \end{itemize}
+\end{itemize}
+
+El historial de cliente se implementa con enfoque SCD2 mediante AUTO CDC, porque de cara a modelado y serving es más importante conservar la evolución temporal de atributos que sobrescribir el último estado sin contexto.
+
+Durante el desarrollo de silver apareció un problema de consumo de memoria asociado a joins streaming exigentes. Para estabilizar la ejecución en nuestro entorno se rediseñó el flujo hacia un patrón stream-static en la unificación de eventos relevantes. Esta modificación mantuvo la lógica funcional del pipeline y, al mismo tiempo, redujo presión de estado y tiempos muertos.
 
 \paragraph{Capa gold}
-La capa gold se separó en tres scripts para mantener modularidad:
+
+La capa gold se estructuró en tres scripts independientes para mantener modularidad y trazabilidad, siguiendo la filosofía del ejemplo del profesor:
 \begin{itemize}
-    \item \texttt{03\_gold\_churn\_spine.py},
-    \item \texttt{03\_gold\_customer\_profile.py},
-    \item \texttt{03\_gold\_customer\_aggregations.py}.
+    \item \texttt{03\_gold\_churn\_spine.py} $\to$ \texttt{gold\_churn\_spine},
+    \item \texttt{03\_gold\_customer\_profile.py} $\to$ \texttt{gold\_customer\_profile},
+    \item \texttt{03\_gold\_customer\_aggregations.py} $\to$ \texttt{gold\_customer\_aggregations}.
 \end{itemize}
 
-Este diseño replica el patrón del proyecto de referencia del profesor, adaptado al caso Telco Churn. Además, se dejaron declaradas claves primarias temporales (\texttt{PRIMARY KEY ... TIMESERIES}) en las tablas gold orientadas a Feature Store, para evitar rehacer estructura cuando se disponga de licencia completa.
+Este split evita archivos monolíticos difíciles de mantener y permite evolucionar cada tabla de forma controlada en siguientes hitos.
 
-\subsection{Calidad de datos en silver}
+Además, se dejó preparada la semántica de claves para una futura integración real con Online Feature Store: \texttt{gold\_customer\_profile} mantiene clave primaria temporal y \texttt{gold\_customer\_aggregations} también quedó declarada con \texttt{PRIMARY KEY (... TIMESERIES)}, de forma que cuando se disponga de licencia completa no haya que rehacer la base de modelado.
 
-Las reglas se centralizan en \texttt{codigo/src/medallion\_pipeline/rules/customers.py}, evitando lógica duplicada y facilitando mantenimiento. Este enfoque permitió ajustar validaciones por entidad sin introducir divergencias entre flujos.
+% ─────────────────────────────────────────────────────────────
+\section{Control de calidad — Capa Silver}
+% ─────────────────────────────────────────────────────────────
 
-El resultado práctico es una separación explícita entre dato válido e inválido, con cuarentena trazable por dominio. Este punto fue relevante porque permitió depurar incidencias de calidad sin bloquear la actualización completa del pipeline.
+\subsection{Centralización de reglas}
 
-\subsection{Incidencias y mitigaciones aplicadas}
+Las reglas de calidad se centralizan en \path{codigo/src/medallion_pipeline/rules/customers.py} para evitar lógica duplicada y facilitar la revisión funcional. Esta centralización simplifica el mantenimiento: cuando una regla cambia, la actualización se realiza en un único punto y se propaga automáticamente al flujo completo. Cada regla es una expresión SQL que debe evaluar a \texttt{TRUE} para que un registro se considere válido; los registros que no la superan son marcados con el flag \texttt{is\_quarantined} en lugar de descartados, preservando trazabilidad.
 
-Durante el hito se resolvieron incidencias técnicas relevantes:
+\subsection{Reglas por entidad}
+
+\subsubsection{Clientes (\texttt{get\_customer\_rules})}
+
+La entidad de clientes es el eje central del modelo de churn. Sus reglas buscan garantizar que cada registro represente a un cliente real e identificable, con datos de contrato y facturación coherentes.
+
+\begin{longtable}{>{\ttfamily}p{4.2cm} p{5.5cm} p{5.5cm}}
+\toprule
+\textbf{Regla} & \textbf{Expresión SQL} & \textbf{Justificación} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Regla} & \textbf{Expresión SQL} & \textbf{Justificación} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+valid\_customer\_id & \texttt{customer\_id IS NOT NULL} & Sin identificador no es posible vincular el registro con ninguna otra entidad del modelo. Es la clave de integridad referencial del sistema. \\[4pt]
+valid\_age & \texttt{age > 0 AND age < 120} & Filtra edades biológicamente imposibles originadas por errores de ingesta o valores por defecto. El rango 1--119 cubre la totalidad de clientes reales posibles. \\[4pt]
+valid\_contract\_type & \texttt{contract\_type IN ('monthly', 'annual')} & El tipo de contrato determina la lógica de cálculo de churn. Valores fuera del dominio conocido indicarían un error de codificación upstream que podría distorsionar los modelos. \\[4pt]
+valid\_monthly\_fee & \texttt{monthly\_fee >= 0} & Una tarifa negativa es económicamente incoherente y señala un error de transformación. Se permite el valor cero para cubrir planes gratuitos o promocionales. \\
+\end{longtable}
+
+\subsubsection{Uso (\texttt{get\_usage\_rules})}
+
+Los registros de uso son la principal fuente de señal de comportamiento del cliente. La calidad en esta entidad es crítica porque sus valores alimentan directamente las features del modelo predictivo.
+
+\begin{longtable}{>{\ttfamily}p{4.2cm} p{5.5cm} p{5.5cm}}
+\toprule
+\textbf{Regla} & \textbf{Expresión SQL} & \textbf{Justificación} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Regla} & \textbf{Expresión SQL} & \textbf{Justificación} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+valid\_customer\_id & \texttt{customer\_id IS NOT NULL} & Necesario para asociar el consumo a un cliente concreto. Sin él el registro es inutilizable para el análisis. \\[4pt]
+valid\_year\_month & \texttt{year\_month IS NOT NULL} & El período de referencia es imprescindible para la agregación mensual y la construcción de la ventana temporal del modelo. \\[4pt]
+valid\_data\_consumed & \texttt{data\_consumed\_gb >= 0} & El consumo de datos no puede ser negativo. Valores negativos apuntan a errores de medición o reversiones mal registradas. \\[4pt]
+valid\_call\_minutes & \texttt{call\_minutes >= 0} & Análogamente, los minutos de llamada son una magnitud no negativa. Un valor negativo indicaría un error en el sistema de medición. \\[4pt]
+valid\_bill\_amount & \texttt{bill\_amount >= 0} & El importe facturado debe ser cero o positivo. Importes negativos pueden deberse a abonos incorrectamente clasificados que contaminarían los ratios de facturación. \\
+\end{longtable}
+
+\subsubsection{Etiquetas (\texttt{get\_label\_rules})}
+
+Las etiquetas representan la variable objetivo del modelo de churn. Su integridad es especialmente sensible: un error aquí no degrada la calidad del dato sino directamente la del entrenamiento.
+
+\begin{longtable}{>{\ttfamily}p{4.2cm} p{5.5cm} p{5.5cm}}
+\toprule
+\textbf{Regla} & \textbf{Expresión SQL} & \textbf{Justificación} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Regla} & \textbf{Expresión SQL} & \textbf{Justificación} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+valid\_customer\_id & \texttt{customer\_id IS NOT NULL} & Una etiqueta sin cliente asociado no puede incorporarse al dataset de entrenamiento ni de evaluación. \\[4pt]
+valid\_year\_month & \texttt{year\_month IS NOT NULL} & La etiqueta de churn es inherentemente temporal. Sin período de referencia no es posible alinearla con las features del mes correspondiente. \\
+\end{longtable}
+
+\subsubsection{Interacciones (\texttt{get\_interaction\_rules})}
+
+Los eventos de interacción enriquecen el perfil del cliente con señales de comportamiento cualitativo. La validación se centra en la coherencia del tipo de interacción, ya que determina cómo se agregan y ponderan los eventos en la capa gold.
+
+\begin{longtable}{>{\ttfamily}p{4.2cm} p{5.5cm} p{5.5cm}}
+\toprule
+\textbf{Regla} & \textbf{Expresión SQL} & \textbf{Justificación} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Regla} & \textbf{Expresión SQL} & \textbf{Justificación} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+valid\_customer\_id & \texttt{customer\_id IS NOT NULL} & Sin cliente identificado la interacción no puede vincularse al historial correspondiente. \\[4pt]
+valid\_timestamp & \texttt{timestamp IS NOT NULL} & La ordenación temporal de las interacciones es necesaria para construir features de recencia y frecuencia. Sin timestamp el evento pierde su dimensión temporal. \\[4pt]
+valid\_interaction\_type & \texttt{interaction\_type IN (...)} & El tipo de interacción está codificado en un dominio cerrado de 13 valores. Cualquier valor fuera de este dominio indica un error de integración upstream y podría introducir categorías espurias en el modelo. \\
+\end{longtable}
+
+% ─────────────────────────────────────────────────────────────
+\section{Robustez y resolución de incidencias}
+% ─────────────────────────────────────────────────────────────
+
+En términos de robustez, el hito incluyó resolución de incidencias reales de plataforma y de código:
 
 \begin{itemize}
-    \item \texttt{ImportError} por imports relativos en runtime del pipeline, corregido con imports robustos y fallback en silver.
-    \item \texttt{UNRESOLVED\_COLUMN} en AUTO CDC por referencia inválida a \texttt{\_rescued\_data}.
-    \item \texttt{CANNOT\_CHANGE\_DATASET\_TYPE} al refactorizar una tabla gold, resuelto manteniendo compatibilidad de tipo.
-    \item eventos \texttt{OUT\_OF\_MEMORY} en ejecuciones largas, mitigados con ajuste de diseño de joins/flows.
-    \item \texttt{413 Request Entity Too Large} en \texttt{bundle deploy}, mitigado con \texttt{sync.exclude} para artefactos generados.
+    \item \texttt{ImportError: attempted relative import with no known parent package} — originado por la ejecución de módulos fuera del contexto de paquete esperado por Python; resuelto mediante ajuste del \texttt{sys.path} en el entorno DLT.
+    \item \texttt{UNRESOLVED\_COLUMN} en AUTO CDC por referencia a \texttt{\_rescued\_data} no presente en la entidad de clientes; resuelto condicionando la selección de columnas a las presentes en el esquema fuente.
+    \item \texttt{CANNOT\_CHANGE\_DATASET\_TYPE} al refactorizar una tabla gold de tipo incorrecto; resuelto eliminando la tabla obsoleta antes del redespliegue.
+    \item Eventos \texttt{OUT\_OF\_MEMORY} en ejecuciones largas; mitigados ajustando el particionado y evitando materializaciones innecesarias en la capa de transformación.
 \end{itemize}
 
-La forma de trabajo aplicada fue siempre la misma: aislar causa raíz, aplicar ajuste mínimo seguro y validar en ejecución completa. Este ciclo iterativo fue clave para cerrar el hito con una plataforma estable y no con una solución teórica.
+El enfoque aplicado fue pragmático: primero aislar la causa raíz, después aplicar el ajuste mínimo seguro y, finalmente, validar con ejecución completa. Este ciclo se repitió hasta alcanzar actualizaciones estables en estado \texttt{COMPLETED}.
 
 \subsection{Orquestación final del hito}
 
-Se creó un job final de orquestación en dos tareas:
-\begin{enumerate}
-    \item ejecución de pipeline medallion,
-    \item ejecución del notebook \texttt{codigo/notebooks/04\_Feature\_Store\_Registration.py}.
-\end{enumerate}
+Con la capa de datos estabilizada, cerramos el hito incorporando un job final de orquestación, equivalente en estructura al del proyecto de referencia:
 
-El notebook final se adaptó para ejecutarse en modo simulación de Feature Store, ya que Free Edition no permite desplegar Lakebase/Online Feature Store. Aun así, el cuaderno valida la presencia de tablas gold, deja trazas de ejecución y conserva comentado el bloque de código real para activación futura.
+\begin{itemize}
+    \item Job: \texttt{Telco Churn - Hito 2 Orchestration}
+    \item Secuencia:
+    \begin{enumerate}
+        \item Ejecución de pipeline Medallion,
+        \item Ejecución del notebook \path{codigo/notebooks/04_Feature_Store_Registration.py}.
+    \end{enumerate}
+\end{itemize}
 
-También se configuraron notificaciones de éxito y fallo en el propio job para ambos integrantes, de manera que la operación quede monitorizada sin revisión manual continua.
+El notebook final se incorporó en \path{codigo/notebooks} y se adaptó para ejecución en modo simulación de Feature Store, ya que Free Edition no permite desplegar Lakebase/Online Feature Store. Aun así, el notebook valida la existencia de tablas gold, registra trazas de ejecución y conserva comentado el bloque de código real para activar en cuanto haya licencia.
 
-\subsection{Limpieza y gobierno del entorno}
+También se configuraron notificaciones de éxito y error en el propio job para ambos integrantes del equipo, de forma que la ejecución quede monitorizada sin necesidad de revisar manualmente la UI en cada corrida.
 
-Como parte del cierre de Hito 2 se eliminaron recursos antiguos en desuso para evitar ambigüedad operativa. Se mantuvieron exclusivamente los objetos oficiales en \texttt{workspace.telco\_churn}, simplificando la operación y la defensa técnica del proyecto.
+\subsection{Decisiones de limpieza y gobierno del entorno}
+
+Como parte del cierre del hito se realizó limpieza de recursos antiguos para evitar duplicidades y confusión operativa. Se eliminaron volumen y objetos del esquema previo ya en desuso, manteniendo únicamente los recursos oficiales del proyecto en \texttt{workspace.telco\_churn}.
+
+Esta parte, aunque no cambia el resultado analítico, sí mejora la mantenibilidad del entorno: reduce riesgo de ejecutar sobre tablas antiguas y simplifica la explicación del proyecto durante defensa.
 
 \subsection{Estado de cierre del Hito 2}
 
 El cierre técnico queda validado con:
 \begin{itemize}
-    \item pipeline en estado \texttt{COMPLETED} (\texttt{update\_id}: \texttt{aae8711c-6d5f-4502-b237-41f6b738c0e6}),
-    \item job de orquestación en \texttt{SUCCESS} (\texttt{run\_id}: \texttt{640253146512278}),
-    \item tablas medallion materializadas en \texttt{workspace.telco\_churn}.
+    \item Pipeline en estado \texttt{COMPLETED} (update final validada: \texttt{aae8711c-6d5f-4502-b237-41f6b738c0e6}),
+    \item Job de orquestación ejecutado en \texttt{SUCCESS} (\texttt{run\_id}: \texttt{640253146512278}),
+    \item Tablas medallion materializadas en \texttt{workspace.telco\_churn},
+    \item Recursos antiguos del esquema previo limpiados para evitar ambigüedad operativa.
 \end{itemize}
 
-Con esto, Hito 2 queda cerrado con una base de datos estable, gobernada y completamente ejecutable. La transición al Hito 3 puede iniciarse sin rehacer ingeniería de datos y con trazabilidad suficiente de decisiones técnicas y operativas.
+El DAG resultante refleja la linaje completa del pipeline, desde la ingesta en bronze hasta las tablas gold, con todas las tablas en estado \texttt{COMPLETED} y los flujos de cuarentena activos por entidad:
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{assets/dag_tablas.png}
+    \caption{DAG del pipeline medallion — Hito 2}
+\end{figure}
+
+En términos académicos y técnicos, el objetivo del hito se considera cumplido: no solo existe código, sino una solución desplegada, ejecutada y trazable, con documentación reproducible tanto por CLI como por UI. Por tanto, Hito 2 queda cerrado con una base de datos estable y gobernada para iniciar Hito 3 sin rehacer ingeniería de datos.
+
+% ─────────────────────────────────────────────────────────────
 \section{Hito 3: Modelado y experimentación (apartado reservado)}
+% ─────────────────────────────────────────────────────────────
 
-Sección reservada para la siguiente entrega. Se completará con diseño experimental, selección de modelo, métricas, validación y análisis de sesgo.
+Sección reservada para completar en la siguiente entrega.
 
+% ─────────────────────────────────────────────────────────────
 \section{Hito 4: Despliegue y monitorización (apartado reservado)}
+% ─────────────────────────────────────────────────────────────
 
-Sección reservada para la última entrega. Se completará con estrategia de despliegue, monitorización técnica y de negocio, operación y cierre final.
+Sección reservada para completar en la última entrega.
 
 \end{document}
