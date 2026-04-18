@@ -5,11 +5,9 @@
       description: "Job final de Hito 2: ejecuta pipeline Medallion y despues simulacion de Feature Store."
       email_notifications:
         on_failure:
-          - Alonso.Marcos@alu.uclm.es
-          - Jose.Barros1@alu.uclm.es
+          - example@example.es
         on_success:
-          - Alonso.Marcos@alu.uclm.es
-          - Jose.Barros1@alu.uclm.es
+          - example@example.es
       tasks:
         - task_key: run_telco_pipeline
           description: "Ejecucion del pipeline Medallion Telco Churn"

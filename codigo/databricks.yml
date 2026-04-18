@@ -12,6 +12,8 @@ sync:
     - src/medallion_pipeline/utilities/source_buffer/**
     - src/medallion_pipeline/utilities/generate_full.log
     - data_generator/
+  include:
+    - notebooks/**
 
 variables:
   uc_catalog:
