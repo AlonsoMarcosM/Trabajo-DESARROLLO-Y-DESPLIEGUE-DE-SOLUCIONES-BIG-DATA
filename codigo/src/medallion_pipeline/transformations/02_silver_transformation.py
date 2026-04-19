@@ -9,7 +9,7 @@ Pattern aligned with professor example:
 """
 
 import pyspark.pipelines as dp
-from pyspark.sql.functions import col, coalesce, expr, to_timestamp
+from pyspark.sql.functions import col, coalesce, expr, to_timestamp, when, lit
 
 import sys
 
@@ -52,7 +52,14 @@ def eval_customers():
         spark.readStream
              .option("skipChangeCommits", "true")
              .table("bronze_customers")
-             .withColumn("customer_sequence_at", coalesce(to_timestamp(col("customer_updated_at")), col("ingestion_timestamp")))
+             .withColumn(
+                 "customer_sequence_at",
+                 coalesce(
+                     to_timestamp(col("signup_date")),      # ✅ primero fecha de negocio real
+                     to_timestamp(col("customer_updated_at")),
+                     lit("2023-01-01 00:00:00").cast("timestamp"),
+                 )
+             )
              .withColumn("is_quarantined", expr(cust_expr))
     )
 

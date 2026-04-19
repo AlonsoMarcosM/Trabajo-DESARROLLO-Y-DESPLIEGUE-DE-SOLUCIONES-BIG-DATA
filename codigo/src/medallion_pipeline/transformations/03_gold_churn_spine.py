@@ -29,11 +29,21 @@ def gold_churn_spine():
 
     return df_events.select(
         col("customer_id"),
-        # clave temporal para feature store
-        col("usage_event_time"),
         col("year_month"),
+        col("usage_event_time"),
         col("label_available_date"),
         col("churn_date"),
-        # label
         when(col("churn_date").isNotNull(), 1).otherwise(0).alias("label_will_churn"),
+        col("roaming_gb"),
+        col("sms_count"),
+        col("bill_overage"),
+        col("speed_mbps"),
+        col("days_active"),
+        #col("tariff_plan"),
+        #col("data_consumed_gb"),
+        #col("call_minutes"),
+        #col("bill_amount"),
+        #col("days_payment_late"),
+        #col("coverage_score"),
+        #col("nps_score"),
     )
