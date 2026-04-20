@@ -1,4 +1,4 @@
-4"""
+"""
 Shared utilities for the experimentation in customer churn detection project.
 """
 
