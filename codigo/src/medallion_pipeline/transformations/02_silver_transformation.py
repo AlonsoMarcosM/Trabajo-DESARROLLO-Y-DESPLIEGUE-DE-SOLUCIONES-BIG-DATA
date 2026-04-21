@@ -5,7 +5,7 @@ Pattern aligned with professor example:
 - quarantine tables per entity
 - clean views for valid records
 - AUTO CDC SCD2 for customer history
-- stream-stream join with watermark for usage + labels
+- stream-static enrichment for usage + monthly labels
 """
 
 import pyspark.pipelines as dp
@@ -257,7 +257,7 @@ churn_events_flow = "flow_silver_churn_events"
 
 dp.create_streaming_table(
     name=churn_events_table,
-    comment="Unified silver events: usage enriched with churn labels using stream-stream join.",
+    comment="Unified silver events: clean usage enriched with valid monthly churn labels.",
 )
 
 
@@ -269,6 +269,7 @@ def silver_churn_events():
     df_labels = (
         spark.read
              .table("bronze_labels")
+             .filter("customer_id IS NOT NULL AND year_month IS NOT NULL")
              .withColumn("label_available_date", to_timestamp(col("label_available_date")))
              .select("customer_id", "year_month", "churn_date", "label_available_date")
              .alias("l")
