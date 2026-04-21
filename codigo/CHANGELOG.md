@@ -3,6 +3,91 @@
 Este documento resume los cambios funcionales y el estado tecnico del proyecto
 en Databricks, centrado en la carpeta `codigo/`.
 
+## 2026-04-22 - Cierre tecnico Hito 3 y orquestacion ML
+
+### Resumen ejecutivo
+
+- Implementado el ciclo de modelado de Hito 3 con notebooks independientes y job de Databricks.
+- Separados los jobs por fichero de recurso, siguiendo la estructura recomendada por Databricks y el ejemplo del profesor:
+  - `resources/telco_churn.job.yml`: job Hito 2.
+  - `resources/telco_churn_ml.job.yml`: job Hito 3.
+- Eliminado de `databricks.yml` el patron muerto `data_generator/` porque no existe en el repositorio y generaba warning.
+- Mantenidas las exclusiones reales de artefactos masivos generados por `generate.py`.
+
+### Estado validado (workspace objetivo)
+
+- Job Hito 3: `[dev alonso_marcos] Telco Churn - Hito 3 ML Orchestration`
+- Job id: `588950994995073`
+- Run end-to-end validado en `SUCCESS`: `329240873651157`
+- Modelo registrado: `workspace.telco_churn.churn_lr_pipeline`
+- Alias finales:
+  - `champion`: version 2
+  - `rejected`: version 3
+- Dataset de entrenamiento: `workspace.telco_churn.gold_churn_training_dataset`
+  - filas: `16.316.445`
+  - ventana: `2023-07-01` a `2024-12-01`
+- Baseline de test: `workspace.telco_churn.gold_churn_test_baseline`
+  - filas: `3.153.742`
+  - ventana: `2024-10-01` a `2024-12-01`
+
+### Como ejecutar Hito 3 desde CLI
+
+Ejecutar desde `codigo/`:
+
+```powershell
+databricks bundle validate -t dev --profile alonso.marcos@alu.uclm.es
+databricks bundle deploy -t dev --profile alonso.marcos@alu.uclm.es
+databricks bundle run telco_churn_ml_orchestration -t dev --profile alonso.marcos@alu.uclm.es
+```
+
+El job ejecuta tres tareas secuenciales:
+
+1. `run_training_dataset_generation`: genera `gold_churn_training_dataset`.
+2. `run_mlflow_experimentation`: ejecuta grid search y registra el mejor candidato.
+3. `run_production`: evalua champion/challenger y actualiza aliases en Unity Catalog.
+
+### Como probar rapidamente el estado sin relanzar entrenamiento
+
+Validar bundle:
+
+```powershell
+databricks bundle validate -t dev --profile alonso.marcos@alu.uclm.es
+```
+
+Comprobar el ultimo run validado:
+
+```powershell
+databricks jobs get-run 329240873651157 --profile alonso.marcos@alu.uclm.es
+```
+
+Comprobar modelo registrado:
+
+```powershell
+databricks registered-models get workspace.telco_churn.churn_lr_pipeline --include-aliases --profile alonso.marcos@alu.uclm.es
+databricks model-versions get-by-alias workspace.telco_churn.churn_lr_pipeline champion --include-aliases --profile alonso.marcos@alu.uclm.es
+```
+
+Comprobar tablas desde SQL:
+
+```sql
+SELECT COUNT(*) AS total_rows,
+       SUM(CASE WHEN label_will_churn = 1 THEN 1 ELSE 0 END) AS churn_rows,
+       MIN(usage_event_time) AS min_event_time,
+       MAX(usage_event_time) AS max_event_time
+FROM workspace.telco_churn.gold_churn_training_dataset;
+
+SELECT COUNT(*) AS baseline_rows,
+       MIN(usage_event_time) AS min_event_time,
+       MAX(usage_event_time) AS max_event_time
+FROM workspace.telco_churn.gold_churn_test_baseline;
+```
+
+### Nota sobre reejecucion
+
+- No hace falta relanzar el job de Hito 3 por separar `telco_churn_ml.job.yml`: solo cambia la organizacion del bundle, no la logica de tareas.
+- Si se cambia el codigo de notebooks `05`, `07` u `08`, entonces si procede relanzar `telco_churn_ml_orchestration`.
+- Si solo se actualizan documentos o comentarios YAML, basta con `bundle validate` y, si queremos reflejarlo en Databricks, `bundle deploy`.
+
 ## 2026-03-14 - Alineacion final Hito 2 y ejecucion completa
 
 ### Resumen ejecutivo
