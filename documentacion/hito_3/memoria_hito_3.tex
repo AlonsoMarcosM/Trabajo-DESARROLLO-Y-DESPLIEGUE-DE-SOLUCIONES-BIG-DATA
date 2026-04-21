@@ -1,57 +1,41 @@
-﻿\documentclass[12pt,a4paper]{article}
+\documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[spanish]{babel}
 \usepackage{geometry}
 \geometry{margin=2.5cm}
 
-\title{Hito 3: Modelado y experimentación}
-\author{Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es}) \\ Jose Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})}
+\title{Hito 3: Modelado y experimentacion}
+\author{Alonso Marcos Munoz (\texttt{Alonso.Marcos@alu.uclm.es}) \\ Jose Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})}
 \date{Abril de 2026}
 
 \begin{document}
 \maketitle
 
-\section{Datos de la entrega}
-\begin{itemize}
-  \item Asignatura: DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA.
-  \item Máster: Máster Universitario en Big Data y Computación en la Nube.
-  \item Curso académico: 2025-2026.
-\end{itemize}
+\section*{Nota de version}
 
-\section{Objetivo del hito}
-Entrenar y comparar modelos de churn sobre la base de datos consolidada, seleccionando una versión final técnicamente robusta y alineada con objetivos de negocio.
+La memoria incremental completa y actualizada del Hito 3 se mantiene en
+\texttt{memoria\_hito\_3.md}. Ese documento incluye los Hitos 1 y 2 completos,
+el desarrollo del Hito 3 y el apartado reservado para Hito 4, siguiendo la regla
+incremental de la guia del proyecto.
 
-\section{Enfoque de modelado}
-Se trabajará de forma incremental: baseline reproducible, mejoras controladas y selección final basada en evidencia. Se prioriza estabilidad y explicabilidad frente a complejidad excesiva.
+\section*{Resumen tecnico validado}
 
-\section{Diseño experimental}
-\subsection{Separación temporal}
-La partición será temporal para evitar fuga de información entre entrenamiento y validación.
+El ciclo de modelado se ha ejecutado en Databricks mediante el job
+\texttt{telco\_churn\_ml\_orchestration}, con run validado
+\texttt{329240873651157} en estado \texttt{SUCCESS}. El dataset de entrenamiento
+\texttt{workspace.telco\_churn.gold\_churn\_training\_dataset} contiene
+16.316.445 filas y cubre la ventana temporal 2023-07-01 a 2024-12-01.
 
-\subsection{Métricas}
-Métricas principales: recall, precisión y F1. Métricas de soporte: AUC-PR y análisis por segmentos.
+La experimentacion MLflow ejecuto ocho configuraciones de regresion logistica.
+La mejor configuracion fue \texttt{reg\_param=0.01},
+\texttt{elastic\_net\_param=0.5} y \texttt{max\_iter=100}, con AUC-PR de
+validacion 0.990393 y umbral 0.64. El modelo registrado es
+\texttt{workspace.telco\_churn.churn\_lr\_pipeline}.
 
-\subsection{Fairness}
-Revisión de equidad mediante Equal Opportunity Difference para comprobar consistencia de detección entre grupos.
-
-\section{Plan de trabajo}
-\begin{itemize}
-  \item Semana 1: baseline y validación del pipeline de entrenamiento.
-  \item Semana 2: ingeniería de variables y tuning acotado.
-  \item Semana 3: comparación final, fairness y selección del modelo.
-\end{itemize}
-
-Reparto: Alonso en pipeline/MLflow; Jose en análisis de resultados y selección final; documentación y defensa en conjunto.
-
-\section{Riesgos y control}
-\begin{itemize}
-  \item Sobreajuste por tuning excesivo: limitar búsqueda y validar temporalmente.
-  \item Mejora técnica sin impacto operativo: medir también métricas de negocio.
-  \item Baja explicabilidad: priorizar interpretación de variables y decisión trazable.
-\end{itemize}
-
-\section{Resultado esperado}
-Modelo candidato preparado para despliegue, con trazabilidad completa de experimentos y argumentos sólidos para su defensa técnica y de negocio.
+Tras la evaluacion champion-challenger, el alias \texttt{champion} permanece en
+la version 2 y la version 3 queda marcada como \texttt{rejected}, porque no
+mejora estrictamente el AUC-PR de test del champion. La tabla baseline de test es
+\texttt{workspace.telco\_churn.gold\_churn\_test\_baseline}.
 
 \end{document}

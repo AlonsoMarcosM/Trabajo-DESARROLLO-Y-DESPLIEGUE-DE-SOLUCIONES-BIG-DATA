@@ -40,7 +40,7 @@ evaluation_max_retries = 3
 # Table configuration
 ###############################################################################
 
-baseline_table_name = f"{catalog}.{database}.gold_fraud_test_baseline"
+baseline_table_name = f"{catalog}.{database}.gold_churn_test_baseline"
 
 
 ###############################################################################
@@ -111,6 +111,31 @@ _CANDIDATE_DEFAULTS = {
     "ohe_handle_invalid": "keep",
     "asm_handle_invalid": "error"
 }
+
+
+def get_candidate_or_challenger_version(client, uc_model_name):
+    """
+    Return the model version that should be evaluated in production.
+
+    Normal execution starts from the `candidate` alias created by the
+    experimentation notebook. If a Databricks task retry happens after the
+    alias has already been moved to `challenger`, the retry should resume from
+    that active challenger instead of failing because `candidate` no longer
+    exists.
+    """
+    try:
+        return client.get_model_version_by_alias(
+            name = uc_model_name,
+            alias = "candidate"
+        ), "candidate"
+    except Exception as candidate_error:
+        try:
+            return client.get_model_version_by_alias(
+                name = uc_model_name,
+                alias = "challenger"
+            ), "challenger"
+        except Exception:
+            raise candidate_error
 
 
 def extract_candidate_metadata(candidate_version):
@@ -435,6 +460,25 @@ def apply_promotion_aliases(
         )
         client.set_model_version_tag(uc_model_name, challenger_version_number, "rejection_reason", "did_not_outperform_champion")
         client.set_model_version_tag(uc_model_name, challenger_version_number, "test_auc_pr", f"{challenger_test_metrics['auc_pr']:.4f}")
+        rejected_version_description = f"""
+### Rejected challenger version (alias: `rejected`)
+
+This version was evaluated against the current `champion` on the held-out test dataset and was not promoted.
+
+#### Test metrics
+
+* **AUC-PR**: `{challenger_test_metrics['auc_pr']:.4f}`
+* **AUC-ROC**: `{challenger_test_metrics['auc_roc']:.4f}`
+* **F1-score**: `{challenger_test_metrics['f1']:.4f}`
+
+**Decision threshold (from validation)**: `{challenger_validation_threshold}`
+**Rejection reason**: `did_not_outperform_champion`
+"""
+        client.update_model_version(
+            name = uc_model_name,
+            version = challenger_version_number,
+            description = rejected_version_description
+        )
         print(f"Version {challenger_version_number} → 'rejected'")
 
 
