@@ -150,61 +150,64 @@ Esta separación evita mezclar periodos sin control y deja preparado el terreno 
 
 ### Arquitectura medallion ejecutada
 
-#### Capa bronze
+A continuación se describe cada capa por separado para que quede claro qué responsabilidad tiene, qué tablas materializa y qué datos contiene cada salida. Los recuentos indicados corresponden a la carga histórica usada en Hito 2: `context/customers.csv` y `events/*` para 2023-2024. Los ficheros de 2025 se mantienen en `source_buffer/*` como producción simulada con deriva y no entran automáticamente en estas tablas si no se amplía la ingesta.
 
-La capa bronze se implementa en `codigo/src/medallion_pipeline/transformations/01_bronze_ingestion.py`. Aquí priorizamos robustez de ingesta y trazabilidad sobre transformación avanzada. El diseño combina carga batch para contexto de cliente y Auto Loader en streaming para eventos de uso, etiquetas e interacciones.
+#### Capa bronze: ingesta y trazabilidad
 
-Como salida se materializan:
+La capa bronze se implementa en `codigo/src/medallion_pipeline/transformations/01_bronze_ingestion.py`. Su responsabilidad es conservar el dato de entrada con la mínima transformación posible y añadir metadatos técnicos de auditoría. El maestro de clientes se lee como batch porque es una fotografía de contexto, mientras que uso, etiquetas e interacciones se ingieren con Auto Loader en modo incremental.
 
-- `bronze_customers` (batch)
-- `bronze_usage` (streaming)
-- `bronze_labels` (streaming)
-- `bronze_interactions` (streaming)
+| Tabla materializada | Filas | Columnas generadas | Contenido |
+|---------------------|------:|--------------------|-----------|
+| `bronze_customers` | 3.050.000 | `customer_id`, `customer_updated_at`, `age`, `gender`, `contract_type`, `region`, `region_type`, `tariff_plan`, `monthly_fee`, `num_lines`, `device_type`, `acquisition_channel`, `payment_method`, `signup_date`, `has_tv_bundle`, `has_fiber`, `has_roaming`, `paperless_billing`, `autopay`, `nps_score_at_start`, `is_active`, `ingestion_timestamp`, `source_file` | Maestro de clientes sintético. Mantiene atributos demográficos, contractuales, comerciales y de facturación, más trazabilidad de ingesta. |
+| `bronze_usage` | 32.121.558 | `bill_amount`, `bill_overage`, `call_minutes`, `coverage_score`, `customer_id`, `data_consumed_gb`, `days_active`, `days_payment_late`, `nps_score`, `roaming_gb`, `sms_count`, `speed_mbps`, `tariff_plan`, `year_month`, `_rescued_data`, `ingestion_timestamp`, `source_file` | Eventos mensuales de uso y facturación por cliente durante 2023-2024. Es la principal fuente de señales dinámicas para churn. |
+| `bronze_labels` | 32.121.558 | `churn_date`, `customer_id`, `label_available_date`, `year_month`, `_rescued_data`, `ingestion_timestamp`, `source_file` | Etiquetas mensuales de churn disponibles al cierre de cada mes. Permiten construir la variable objetivo sin mezclarla con el maestro de clientes. |
+| `bronze_interactions` | 17.021.772 | `agent_id`, `channel`, `customer_id`, `duration_seconds`, `interaction_type`, `resolution`, `satisfaction_score`, `timestamp`, `_rescued_data`, `ingestion_timestamp`, `source_file` | Eventos de relación con el cliente: llamadas, chats, visitas, reclamaciones, soporte técnico y señales comerciales. |
 
-En esta capa se añadieron metadatos de auditoría (`ingestion_timestamp`, `source_file`) y tolerancia de esquema para evitar bloqueos ante cambios de estructura en JSON. Esto nos permitió mantener estabilidad de actualización incluso cuando el volumen de datos y el número de ficheros creció de forma notable.
+La columna `_rescued_data` aparece en las tablas JSON gestionadas por Auto Loader y permite conservar campos inesperados sin romper la ejecución. En todas las salidas se añaden `ingestion_timestamp` y `source_file` para auditar cuándo y desde qué fichero se incorporó cada registro.
 
-#### Capa silver
+#### Capa silver: calidad, historial y entidades limpias
 
-La capa silver (`codigo/src/medallion_pipeline/transformations/02_silver_transformation.py`) fue el núcleo técnico del hito. Aquí se aplican reglas de calidad, se separa explícitamente el dato inválido y se construyen entidades listas para explotación analítica.
+La capa silver se implementa en `codigo/src/medallion_pipeline/transformations/02_silver_transformation.py` con reglas centralizadas en `codigo/src/medallion_pipeline/rules/customers.py`. Su función es separar registros válidos y no válidos, normalizar tipos temporales y construir entidades coherentes para explotación analítica.
 
-Se materializan:
+| Tabla materializada | Filas | Columnas generadas | Contenido |
+|---------------------|------:|--------------------|-----------|
+| `silver_customers_history` | 3.050.000 | `customer_id`, `customer_updated_at`, `age`, `gender`, `contract_type`, `region`, `region_type`, `tariff_plan`, `monthly_fee`, `num_lines`, `device_type`, `acquisition_channel`, `payment_method`, `signup_date`, `has_tv_bundle`, `has_fiber`, `has_roaming`, `paperless_billing`, `autopay`, `nps_score_at_start`, `is_active`, `__START_AT`, `__END_AT` | Historial SCD2 del maestro de clientes mediante AUTO CDC. En Hito 2 hay una versión por cliente porque se parte de una única fotografía de contexto. |
+| `silver_churn_events` | 32.121.558 | `bill_amount`, `bill_overage`, `call_minutes`, `coverage_score`, `customer_id`, `data_consumed_gb`, `days_active`, `days_payment_late`, `nps_score`, `roaming_gb`, `sms_count`, `speed_mbps`, `tariff_plan`, `year_month`, `_rescued_data`, `ingestion_timestamp`, `source_file`, `usage_event_time`, `churn_date`, `label_available_date` | Eventos de uso limpios enriquecidos con la etiqueta mensual de churn. Mantiene una fila por cliente y mes, por eso conserva la cardinalidad de `bronze_usage`. |
+| `silver_interactions_clean` | 17.021.772 | `agent_id`, `channel`, `customer_id`, `duration_seconds`, `interaction_type`, `resolution`, `satisfaction_score`, `timestamp`, `_rescued_data`, `ingestion_timestamp`, `source_file` | Interacciones válidas con `timestamp` convertido a tipo temporal y dominio de `interaction_type` validado. |
+| `silver_quarantine_customers` | 0 | Columnas de `bronze_customers` más `customer_sequence_at` | Registros de clientes que no superan las reglas de identificador, edad, contrato o tarifa. En la carga de Hito 2 no se generaron incumplimientos. |
+| `silver_quarantine_usage` | 0 | Mismas columnas que `bronze_usage` | Registros de uso con identificador, periodo o métricas numéricas inválidas. La tabla queda creada aunque no haya registros rechazados. |
+| `silver_quarantine_labels` | 0 | `churn_date`, `customer_id`, `label_available_date`, `year_month`, `_rescued_data`, `ingestion_timestamp`, `source_file` | Etiquetas sin cliente o sin periodo válido. En la carga histórica no se detectaron casos. |
+| `silver_quarantine_interactions` | 0 | Mismas columnas que `silver_interactions_clean` | Interacciones sin cliente, sin timestamp o con tipo de interacción fuera del dominio controlado. |
 
-- `silver_customers_history` (SCD2 con AUTO CDC)
-- `silver_churn_events`
-- `silver_interactions_clean`
-- Tablas de cuarentena:
-  - `silver_quarantine_customers`
-  - `silver_quarantine_usage`
-  - `silver_quarantine_labels`
-  - `silver_quarantine_interactions`
+El uso de tablas de cuarentena evita descartar silenciosamente datos defectuosos y, al mismo tiempo, impide que registros inválidos contaminen la capa gold. Que las cuarentenas tengan cero filas en esta ejecución no significa que el mecanismo no exista; significa que el generador entregó datos compatibles con las reglas definidas para Hito 2.
 
-El historial de cliente se implementa con enfoque SCD2 mediante AUTO CDC, porque de cara a modelado y serving es más importante conservar la evolución temporal de atributos que sobrescribir el último estado sin contexto.
+#### Capa gold: base de modelado y características
 
-Durante el desarrollo de silver apareció un problema de consumo de memoria asociado a joins streaming exigentes. Para estabilizar la ejecución en nuestro entorno se rediseñó el flujo hacia un patrón stream-static en la unificación de eventos relevantes. Esta modificación mantuvo la lógica funcional del pipeline y, al mismo tiempo, redujo presión de estado y tiempos muertos.
+La capa gold se reparte en tres scripts, igual que en el proyecto de referencia del profesor, donde la capa final se separa en spine, perfil y variables derivadas. En nuestro caso se mantiene la misma idea, pero adaptada al problema de churn telco:
 
-#### Capa gold
+- `03_gold_churn_spine.py` genera `gold_churn_spine`.
+- `03_gold_customer_profile.py` genera `gold_customer_profile`.
+- `03_gold_customer_aggregations.py` genera `gold_customer_aggregations`.
 
-La capa gold se estructuró en tres scripts independientes para mantener modularidad y trazabilidad, siguiendo la filosofía del ejemplo del profesor:
+| Tabla materializada | Filas | Columnas generadas | Contenido |
+|---------------------|------:|--------------------|-----------|
+| `gold_churn_spine` | 32.121.558 | `customer_id`, `year_month`, `usage_event_time`, `label_available_date`, `churn_date`, `label_will_churn`, `roaming_gb`, `sms_count`, `bill_overage`, `speed_mbps`, `days_active` | Tabla ancla para modelado supervisado. Contiene la clave cliente-mes, la fecha de disponibilidad de etiqueta, la variable objetivo binaria y señales de uso disponibles en el evento. |
+| `gold_customer_profile` | 3.050.000 | `customer_id`, `age`, `gender`, `contract_type`, `region`, `region_type`, `tariff_plan`, `monthly_fee`, `num_lines`, `device_type`, `acquisition_channel`, `payment_method`, `signup_date`, `has_tv_bundle`, `has_fiber`, `has_roaming`, `paperless_billing`, `autopay`, `nps_score_at_start`, `is_active`, `__START_AT`, `__END_AT`, `age_group`, `contract_risk_group` | Perfil estable del cliente con atributos demográficos, contractuales y dos derivadas simples para segmentación: grupo de edad y grupo de riesgo contractual. |
+| `gold_customer_aggregations` | 32.121.558 | `customer_id`, `year_month`, `window_end`, `label_available_date`, `label_will_churn`, `data_consumed_gb`, `call_minutes`, `bill_amount`, `days_payment_late`, `nps_score`, `coverage_score`, `bill_vs_data_ratio` | Features mensuales por cliente. Conserva métricas de uso, facturación, satisfacción y cobertura, y añade el ratio `bill_vs_data_ratio` para aproximar coste relativo por consumo. |
 
-- `03_gold_churn_spine.py` -> `gold_churn_spine`
-- `03_gold_customer_profile.py` -> `gold_customer_profile`
-- `03_gold_customer_aggregations.py` -> `gold_customer_aggregations`
+Las tablas `gold_customer_profile` y `gold_customer_aggregations` se declaran con propiedades compatibles con Change Data Feed y claves temporales, de forma que puedan registrarse posteriormente como tablas de características en Unity Catalog y publicarse en Online Feature Store cuando el entorno académico permita Lakebase. En Hito 2 esta parte queda preparada a nivel de contrato de datos; el entrenamiento y la selección final de variables se abordan en Hito 3.
 
-Este split evita archivos monolíticos difíciles de mantener y permite evolucionar cada tabla de forma controlada en siguientes hitos.
+### Control de calidad - Capa Silver
 
-Además, se dejó preparada la semántica de claves para una futura integración real con Online Feature Store: `gold_customer_profile` mantiene clave primaria temporal y `gold_customer_aggregations` también quedó declarada con `PRIMARY KEY (... TIMESERIES)`, de forma que cuando se disponga de licencia completa no haya que rehacer la base de modelado.
-
-# Control de Calidad — Capa Silver
-
-## Centralización de reglas
+#### Centralización de reglas
 
 Las reglas de calidad se centralizan en `codigo/src/medallion_pipeline/rules/customers.py` para evitar lógica duplicada y facilitar la revisión funcional. Esta centralización simplifica el mantenimiento: cuando una regla cambia, la actualización se realiza en un único punto y se propaga automáticamente al flujo completo. Cada regla es una expresión SQL que debe evaluar a `TRUE` para que un registro se considere válido; los registros que no la superan son marcados con el flag `is_quarantined` en lugar de descartados, preservando trazabilidad.
 
 ---
 
-## Reglas por entidad
+#### Reglas por entidad
 
-### Clientes (`get_customer_rules`)
+##### Clientes (`get_customer_rules`)
 
 La entidad de clientes es el eje central del modelo de churn. Sus reglas buscan garantizar que cada registro represente a un cliente real e identificable, con datos de contrato y facturación coherentes.
 
@@ -217,7 +220,7 @@ La entidad de clientes es el eje central del modelo de churn. Sus reglas buscan 
 
 ---
 
-### Uso (`get_usage_rules`)
+##### Uso (`get_usage_rules`)
 
 Los registros de uso son la principal fuente de señal de comportamiento del cliente. La calidad en esta entidad es crítica porque sus valores alimentan directamente las features del modelo predictivo.
 
@@ -231,7 +234,7 @@ Los registros de uso son la principal fuente de señal de comportamiento del cli
 
 ---
 
-### Etiquetas (`get_label_rules`)
+##### Etiquetas (`get_label_rules`)
 
 Las etiquetas representan la variable objetivo del modelo de churn. Su integridad es especialmente sensible: un error aquí no degrada la calidad del dato sino directamente la del entrenamiento.
 
@@ -242,7 +245,7 @@ Las etiquetas representan la variable objetivo del modelo de churn. Su integrida
 
 ---
 
-### Interacciones (`get_interaction_rules`)
+##### Interacciones (`get_interaction_rules`)
 
 Los eventos de interacción enriquecen el perfil del cliente con señales de comportamiento cualitativo. La validación se centra en la coherencia del tipo de interacción, ya que determina cómo se agregan y ponderan los eventos en la capa gold.
 
@@ -254,16 +257,18 @@ Los eventos de interacción enriquecen el perfil del cliente con señales de com
 
 ---
 
-## Robustez y resolución de incidencias
+### Robustez y resolución de incidencias
 
-En términos de robustez, el hito incluyó resolución de incidencias reales de plataforma y de código:
+La robustez del Hito 2 no se plantea como una lista de errores internos de desarrollo, sino como un conjunto de decisiones concretas de ingeniería y operación que hacen reproducible el pipeline:
 
-- `ImportError: attempted relative import with no known parent package` — originado por la ejecución de módulos fuera del contexto de paquete esperado por Python; resuelto mediante ajuste del `sys.path` en el entorno DLT.
-- `UNRESOLVED_COLUMN` en AUTO CDC por referencia a `_rescued_data` no presente en la entidad de clientes; resuelto condicionando la selección de columnas a las presentes en el esquema fuente.
-- `CANNOT_CHANGE_DATASET_TYPE` al refactorizar una tabla gold de tipo incorrecto; resuelto eliminando la tabla obsoleta antes del redespliegue.
-- Eventos `OUT_OF_MEMORY` en ejecuciones largas; mitigados ajustando el particionado y evitando materializaciones innecesarias en la capa de transformación.
+- Separación estricta entre código versionable y datos generados. Los directorios `context/`, `events/`, `source_buffer/` y los logs del generador se excluyen del bundle para que `validate` y `deploy` no intenten sincronizar artefactos masivos.
+- Imports robustos para ejecución en Databricks. Las reglas de calidad viven en `src/medallion_pipeline/rules/` y se cargan desde el `bundle.sourcePath` inyectado por el pipeline, manteniendo la separación entre reglas y transformaciones.
+- Capa silver con cuarentena explícita. Cada entidad tiene un flujo de evaluación y una tabla de cuarentena, lo que permite que el pipeline siga siendo trazable aunque en futuras cargas aparezcan registros inválidos.
+- Enriquecimiento de eventos con patrón stream-static. Para Hito 2 se mantiene `bronze_usage` como flujo incremental y se cruza con una vista estática de etiquetas mensuales válidas. Esta decisión es suficiente para una carga histórica mensual y reduce complejidad operativa frente a un join stream-stream completo.
+- Ejecución en modo triggered. El pipeline no queda ejecutándose de forma continua; se lanza bajo demanda o desde el job, procesa el lote disponible y libera recursos. Esto encaja con la entrega académica y con la generación mensual de datos.
 
-El enfoque aplicado fue pragmático: primero aislar la causa raíz, después aplicar el ajuste mínimo seguro y, finalmente, validar con ejecución completa. Este ciclo se repitió hasta alcanzar actualizaciones estables en estado `COMPLETED`.
+Con estos ajustes, la evidencia relevante es el resultado final: actualización completa en estado `COMPLETED`, tablas materializadas por capa y contrato de datos preparado para modelado.
+
 ### Orquestación final del hito
 
 Con la capa de datos estabilizada, cerramos el hito incorporando un job final de orquestación, equivalente en estructura al del proyecto de referencia:

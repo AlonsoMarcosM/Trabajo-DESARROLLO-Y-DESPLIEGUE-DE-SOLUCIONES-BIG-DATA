@@ -207,66 +207,119 @@ Esta separación evita mezclar periodos sin control y deja preparado el terreno 
 
 \subsection{Arquitectura medallion ejecutada}
 
-\paragraph{Capa bronze}
+A continuación se describe cada capa por separado para que quede claro qué responsabilidad tiene, qué tablas materializa y qué datos contiene cada salida. Los recuentos indicados corresponden a la carga histórica usada en Hito 2: \texttt{context/customers.csv} y \texttt{events/*} para 2023--2024. Los ficheros de 2025 se mantienen en \texttt{source\_buffer/*} como producción simulada con deriva y no entran automáticamente en estas tablas si no se amplía la ingesta.
 
-La capa bronze se implementa en \path{codigo/src/medallion_pipeline/transformations/01_bronze_ingestion.py}. Aquí priorizamos robustez de ingesta y trazabilidad sobre transformación avanzada. El diseño combina carga batch para contexto de cliente y Auto Loader en streaming para eventos de uso, etiquetas e interacciones.
+\subsubsection{Capa bronze: ingesta y trazabilidad}
 
-Como salida se materializan:
+La capa bronze se implementa en \path{codigo/src/medallion_pipeline/transformations/01_bronze_ingestion.py}. Su responsabilidad es conservar el dato de entrada con la mínima transformación posible y añadir metadatos técnicos de auditoría. El maestro de clientes se lee como batch porque es una fotografía de contexto, mientras que uso, etiquetas e interacciones se ingieren con Auto Loader en modo incremental.
+
+\begin{longtable}{p{4.1cm} r p{8.3cm}}
+\toprule
+\textbf{Tabla materializada} & \textbf{Filas} & \textbf{Contenido} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Tabla materializada} & \textbf{Filas} & \textbf{Contenido} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+\texttt{bronze\_customers} & 3.050.000 & Maestro de clientes sintético. Mantiene atributos demográficos, contractuales, comerciales y de facturación, más trazabilidad de ingesta. \\[4pt]
+\texttt{bronze\_usage} & 32.121.558 & Eventos mensuales de uso y facturación por cliente durante 2023--2024. Es la principal fuente de señales dinámicas para churn. \\[4pt]
+\texttt{bronze\_labels} & 32.121.558 & Etiquetas mensuales de churn disponibles al cierre de cada mes. Permiten construir la variable objetivo sin mezclarla con el maestro de clientes. \\[4pt]
+\texttt{bronze\_interactions} & 17.021.772 & Eventos de relación con el cliente: llamadas, chats, visitas, reclamaciones, soporte técnico y señales comerciales. \\
+\end{longtable}
+
+Columnas generadas en bronze:
 \begin{itemize}
-    \item \texttt{bronze\_customers} (batch),
-    \item \texttt{bronze\_usage} (streaming),
-    \item \texttt{bronze\_labels} (streaming),
-    \item \texttt{bronze\_interactions} (streaming).
+    \item \texttt{bronze\_customers}: \path{customer_id}, \path{customer_updated_at}, \path{age}, \path{gender}, \path{contract_type}, \path{region}, \path{region_type}, \path{tariff_plan}, \path{monthly_fee}, \path{num_lines}, \path{device_type}, \path{acquisition_channel}, \path{payment_method}, \path{signup_date}, \path{has_tv_bundle}, \path{has_fiber}, \path{has_roaming}, \path{paperless_billing}, \path{autopay}, \path{nps_score_at_start}, \path{is_active}, \path{ingestion_timestamp}, \path{source_file}.
+    \item \texttt{bronze\_usage}: \path{bill_amount}, \path{bill_overage}, \path{call_minutes}, \path{coverage_score}, \path{customer_id}, \path{data_consumed_gb}, \path{days_active}, \path{days_payment_late}, \path{nps_score}, \path{roaming_gb}, \path{sms_count}, \path{speed_mbps}, \path{tariff_plan}, \path{year_month}, \path{_rescued_data}, \path{ingestion_timestamp}, \path{source_file}.
+    \item \texttt{bronze\_labels}: \path{churn_date}, \path{customer_id}, \path{label_available_date}, \path{year_month}, \path{_rescued_data}, \path{ingestion_timestamp}, \path{source_file}.
+    \item \texttt{bronze\_interactions}: \path{agent_id}, \path{channel}, \path{customer_id}, \path{duration_seconds}, \path{interaction_type}, \path{resolution}, \path{satisfaction_score}, \path{timestamp}, \path{_rescued_data}, \path{ingestion_timestamp}, \path{source_file}.
 \end{itemize}
 
-En esta capa se añadieron metadatos de auditoría (\texttt{ingestion\_timestamp}, \texttt{source\_file}) y tolerancia de esquema para evitar bloqueos ante cambios de estructura en JSON. Esto nos permitió mantener estabilidad de actualización incluso cuando el volumen de datos y el número de ficheros creció de forma notable.
+La columna \path{_rescued_data} aparece en las tablas JSON gestionadas por Auto Loader y permite conservar campos inesperados sin romper la ejecución. En todas las salidas se añaden \path{ingestion_timestamp} y \path{source_file} para auditar cuándo y desde qué fichero se incorporó cada registro.
 
-\paragraph{Capa silver}
+\subsubsection{Capa silver: calidad, historial y entidades limpias}
 
-La capa silver (\path{codigo/src/medallion_pipeline/transformations/02_silver_transformation.py}) fue el núcleo técnico del hito. Aquí se aplican reglas de calidad, se separa explícitamente el dato inválido y se construyen entidades listas para explotación analítica.
+La capa silver se implementa en \path{codigo/src/medallion_pipeline/transformations/02_silver_transformation.py} con reglas centralizadas en \path{codigo/src/medallion_pipeline/rules/customers.py}. Su función es separar registros válidos y no válidos, normalizar tipos temporales y construir entidades coherentes para explotación analítica.
 
-Se materializan:
+\begin{longtable}{p{4.1cm} r p{8.3cm}}
+\toprule
+\textbf{Tabla materializada} & \textbf{Filas} & \textbf{Contenido} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Tabla materializada} & \textbf{Filas} & \textbf{Contenido} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+\texttt{silver\_customers\_history} & 3.050.000 & Historial SCD2 del maestro de clientes mediante AUTO CDC. En Hito 2 hay una versión por cliente porque se parte de una única fotografía de contexto. \\[4pt]
+\texttt{silver\_churn\_events} & 32.121.558 & Eventos de uso limpios enriquecidos con la etiqueta mensual de churn. Mantiene una fila por cliente y mes, por eso conserva la cardinalidad de \texttt{bronze\_usage}. \\[4pt]
+\texttt{silver\_interactions\_clean} & 17.021.772 & Interacciones válidas con \path{timestamp} convertido a tipo temporal y dominio de \path{interaction_type} validado. \\[4pt]
+\texttt{silver\_quarantine\_customers} & 0 & Registros de clientes que no superan las reglas de identificador, edad, contrato o tarifa. \\[4pt]
+\texttt{silver\_quarantine\_usage} & 0 & Registros de uso con identificador, periodo o métricas numéricas inválidas. \\[4pt]
+\texttt{silver\_quarantine\_labels} & 0 & Etiquetas sin cliente o sin periodo válido. \\[4pt]
+\texttt{silver\_quarantine\_interactions} & 0 & Interacciones sin cliente, sin timestamp o con tipo de interacción fuera del dominio controlado. \\
+\end{longtable}
+
+Columnas generadas en silver:
 \begin{itemize}
-    \item \texttt{silver\_customers\_history} (SCD2 con AUTO CDC),
-    \item \texttt{silver\_churn\_events},
-    \item \texttt{silver\_interactions\_clean},
-    \item Tablas de cuarentena:
-    \begin{itemize}
-        \item \texttt{silver\_quarantine\_customers},
-        \item \texttt{silver\_quarantine\_usage},
-        \item \texttt{silver\_quarantine\_labels},
-        \item \texttt{silver\_quarantine\_interactions}.
-    \end{itemize}
+    \item \texttt{silver\_customers\_history}: columnas de cliente limpias más \path{__START_AT} y \path{__END_AT}.
+    \item \texttt{silver\_churn\_events}: columnas de uso, \path{_rescued_data}, \path{ingestion_timestamp}, \path{source_file}, \path{usage_event_time}, \path{churn_date} y \path{label_available_date}.
+    \item \texttt{silver\_interactions\_clean}: \path{agent_id}, \path{channel}, \path{customer_id}, \path{duration_seconds}, \path{interaction_type}, \path{resolution}, \path{satisfaction_score}, \path{timestamp}, \path{_rescued_data}, \path{ingestion_timestamp}, \path{source_file}.
+    \item \texttt{silver\_quarantine\_customers}: columnas de \texttt{bronze\_customers} más \path{customer_sequence_at}.
+    \item \texttt{silver\_quarantine\_usage}: mismas columnas que \texttt{bronze\_usage}.
+    \item \texttt{silver\_quarantine\_labels}: \path{churn_date}, \path{customer_id}, \path{label_available_date}, \path{year_month}, \path{_rescued_data}, \path{ingestion_timestamp}, \path{source_file}.
+    \item \texttt{silver\_quarantine\_interactions}: mismas columnas que \texttt{silver\_interactions\_clean}.
 \end{itemize}
 
-El historial de cliente se implementa con enfoque SCD2 mediante AUTO CDC, porque de cara a modelado y serving es más importante conservar la evolución temporal de atributos que sobrescribir el último estado sin contexto.
+El uso de tablas de cuarentena evita descartar silenciosamente datos defectuosos y, al mismo tiempo, impide que registros inválidos contaminen la capa gold. Que las cuarentenas tengan cero filas en esta ejecución no significa que el mecanismo no exista; significa que el generador entregó datos compatibles con las reglas definidas para Hito 2.
 
-Durante el desarrollo de silver apareció un problema de consumo de memoria asociado a joins streaming exigentes. Para estabilizar la ejecución en nuestro entorno se rediseñó el flujo hacia un patrón stream-static en la unificación de eventos relevantes. Esta modificación mantuvo la lógica funcional del pipeline y, al mismo tiempo, redujo presión de estado y tiempos muertos.
+\subsubsection{Capa gold: base de modelado y características}
 
-\paragraph{Capa gold}
-
-La capa gold se estructuró en tres scripts independientes para mantener modularidad y trazabilidad, siguiendo la filosofía del ejemplo del profesor:
+La capa gold se reparte en tres scripts, igual que en el proyecto de referencia del profesor, donde la capa final se separa en spine, perfil y variables derivadas. En nuestro caso se mantiene la misma idea, pero adaptada al problema de churn telco:
 \begin{itemize}
-    \item \texttt{03\_gold\_churn\_spine.py} $\to$ \texttt{gold\_churn\_spine},
-    \item \texttt{03\_gold\_customer\_profile.py} $\to$ \texttt{gold\_customer\_profile},
-    \item \texttt{03\_gold\_customer\_aggregations.py} $\to$ \texttt{gold\_customer\_aggregations}.
+    \item \texttt{03\_gold\_churn\_spine.py} genera \texttt{gold\_churn\_spine}.
+    \item \texttt{03\_gold\_customer\_profile.py} genera \texttt{gold\_customer\_profile}.
+    \item \texttt{03\_gold\_customer\_aggregations.py} genera \texttt{gold\_customer\_aggregations}.
 \end{itemize}
 
-Este split evita archivos monolíticos difíciles de mantener y permite evolucionar cada tabla de forma controlada en siguientes hitos.
+\begin{longtable}{p{4.1cm} r p{8.3cm}}
+\toprule
+\textbf{Tabla materializada} & \textbf{Filas} & \textbf{Contenido} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Tabla materializada} & \textbf{Filas} & \textbf{Contenido} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+\texttt{gold\_churn\_spine} & 32.121.558 & Tabla ancla para modelado supervisado. Contiene la clave cliente-mes, la fecha de disponibilidad de etiqueta, la variable objetivo binaria y señales de uso disponibles en el evento. \\[4pt]
+\texttt{gold\_customer\_profile} & 3.050.000 & Perfil estable del cliente con atributos demográficos, contractuales y dos derivadas simples para segmentación: grupo de edad y grupo de riesgo contractual. \\[4pt]
+\texttt{gold\_customer\_aggregations} & 32.121.558 & Features mensuales por cliente. Conserva métricas de uso, facturación, satisfacción y cobertura, y añade el ratio \path{bill_vs_data_ratio}. \\
+\end{longtable}
 
-Además, se dejó preparada la semántica de claves para una futura integración real con Online Feature Store: \texttt{gold\_customer\_profile} mantiene clave primaria temporal y \texttt{gold\_customer\_aggregations} también quedó declarada con \texttt{PRIMARY KEY (... TIMESERIES)}, de forma que cuando se disponga de licencia completa no haya que rehacer la base de modelado.
+Columnas generadas en gold:
+\begin{itemize}
+    \item \texttt{gold\_churn\_spine}: \path{customer_id}, \path{year_month}, \path{usage_event_time}, \path{label_available_date}, \path{churn_date}, \path{label_will_churn}, \path{roaming_gb}, \path{sms_count}, \path{bill_overage}, \path{speed_mbps}, \path{days_active}.
+    \item \texttt{gold\_customer\_profile}: \path{customer_id}, \path{age}, \path{gender}, \path{contract_type}, \path{region}, \path{region_type}, \path{tariff_plan}, \path{monthly_fee}, \path{num_lines}, \path{device_type}, \path{acquisition_channel}, \path{payment_method}, \path{signup_date}, \path{has_tv_bundle}, \path{has_fiber}, \path{has_roaming}, \path{paperless_billing}, \path{autopay}, \path{nps_score_at_start}, \path{is_active}, \path{__START_AT}, \path{__END_AT}, \path{age_group}, \path{contract_risk_group}.
+    \item \texttt{gold\_customer\_aggregations}: \path{customer_id}, \path{year_month}, \path{window_end}, \path{label_available_date}, \path{label_will_churn}, \path{data_consumed_gb}, \path{call_minutes}, \path{bill_amount}, \path{days_payment_late}, \path{nps_score}, \path{coverage_score}, \path{bill_vs_data_ratio}.
+\end{itemize}
 
-% ─────────────────────────────────────────────────────────────
-\section{Control de calidad — Capa Silver}
-% ─────────────────────────────────────────────────────────────
+Las tablas \texttt{gold\_customer\_profile} y \texttt{gold\_customer\_aggregations} se declaran con propiedades compatibles con Change Data Feed y claves temporales, de forma que puedan registrarse posteriormente como tablas de características en Unity Catalog y publicarse en Online Feature Store cuando el entorno académico permita Lakebase. En Hito 2 esta parte queda preparada a nivel de contrato de datos; el entrenamiento y la selección final de variables se abordan en Hito 3.
 
-\subsection{Centralización de reglas}
+\subsection{Control de calidad - Capa Silver}
+
+\subsubsection{Centralización de reglas}
 
 Las reglas de calidad se centralizan en \path{codigo/src/medallion_pipeline/rules/customers.py} para evitar lógica duplicada y facilitar la revisión funcional. Esta centralización simplifica el mantenimiento: cuando una regla cambia, la actualización se realiza en un único punto y se propaga automáticamente al flujo completo. Cada regla es una expresión SQL que debe evaluar a \texttt{TRUE} para que un registro se considere válido; los registros que no la superan son marcados con el flag \texttt{is\_quarantined} en lugar de descartados, preservando trazabilidad.
 
-\subsection{Reglas por entidad}
+\subsubsection{Reglas por entidad}
 
-\subsubsection{Clientes (\texttt{get\_customer\_rules})}
+\paragraph{Clientes (\texttt{get\_customer\_rules})}
 
 La entidad de clientes es el eje central del modelo de churn. Sus reglas buscan garantizar que cada registro represente a un cliente real e identificable, con datos de contrato y facturación coherentes.
 
@@ -287,7 +340,7 @@ valid\_contract\_type & \texttt{contract\_type IN ('monthly', 'annual')} & El ti
 valid\_monthly\_fee & \texttt{monthly\_fee >= 0} & Una tarifa negativa es económicamente incoherente y señala un error de transformación. Se permite el valor cero para cubrir planes gratuitos o promocionales. \\
 \end{longtable}
 
-\subsubsection{Uso (\texttt{get\_usage\_rules})}
+\paragraph{Uso (\texttt{get\_usage\_rules})}
 
 Los registros de uso son la principal fuente de señal de comportamiento del cliente. La calidad en esta entidad es crítica porque sus valores alimentan directamente las features del modelo predictivo.
 
@@ -309,7 +362,7 @@ valid\_call\_minutes & \texttt{call\_minutes >= 0} & Análogamente, los minutos 
 valid\_bill\_amount & \texttt{bill\_amount >= 0} & El importe facturado debe ser cero o positivo. Importes negativos pueden deberse a abonos incorrectamente clasificados que contaminarían los ratios de facturación. \\
 \end{longtable}
 
-\subsubsection{Etiquetas (\texttt{get\_label\_rules})}
+\paragraph{Etiquetas (\texttt{get\_label\_rules})}
 
 Las etiquetas representan la variable objetivo del modelo de churn. Su integridad es especialmente sensible: un error aquí no degrada la calidad del dato sino directamente la del entrenamiento.
 
@@ -328,7 +381,7 @@ valid\_customer\_id & \texttt{customer\_id IS NOT NULL} & Una etiqueta sin clien
 valid\_year\_month & \texttt{year\_month IS NOT NULL} & La etiqueta de churn es inherentemente temporal. Sin período de referencia no es posible alinearla con las features del mes correspondiente. \\
 \end{longtable}
 
-\subsubsection{Interacciones (\texttt{get\_interaction\_rules})}
+\paragraph{Interacciones (\texttt{get\_interaction\_rules})}
 
 Los eventos de interacción enriquecen el perfil del cliente con señales de comportamiento cualitativo. La validación se centra en la coherencia del tipo de interacción, ya que determina cómo se agregan y ponderan los eventos en la capa gold.
 
@@ -348,20 +401,19 @@ valid\_timestamp & \texttt{timestamp IS NOT NULL} & La ordenación temporal de l
 valid\_interaction\_type & \texttt{interaction\_type IN (...)} & El tipo de interacción está codificado en un dominio cerrado de 13 valores. Cualquier valor fuera de este dominio indica un error de integración upstream y podría introducir categorías espurias en el modelo. \\
 \end{longtable}
 
-% ─────────────────────────────────────────────────────────────
-\section{Robustez y resolución de incidencias}
-% ─────────────────────────────────────────────────────────────
+\subsection{Robustez y resolución de incidencias}
 
-En términos de robustez, el hito incluyó resolución de incidencias reales de plataforma y de código:
+La robustez del Hito 2 no se plantea como una lista de errores internos de desarrollo, sino como un conjunto de decisiones concretas de ingeniería y operación que hacen reproducible el pipeline:
 
 \begin{itemize}
-    \item \texttt{ImportError: attempted relative import with no known parent package} — originado por la ejecución de módulos fuera del contexto de paquete esperado por Python; resuelto mediante ajuste del \texttt{sys.path} en el entorno DLT.
-    \item \texttt{UNRESOLVED\_COLUMN} en AUTO CDC por referencia a \texttt{\_rescued\_data} no presente en la entidad de clientes; resuelto condicionando la selección de columnas a las presentes en el esquema fuente.
-    \item \texttt{CANNOT\_CHANGE\_DATASET\_TYPE} al refactorizar una tabla gold de tipo incorrecto; resuelto eliminando la tabla obsoleta antes del redespliegue.
-    \item Eventos \texttt{OUT\_OF\_MEMORY} en ejecuciones largas; mitigados ajustando el particionado y evitando materializaciones innecesarias en la capa de transformación.
+    \item Separación estricta entre código versionable y datos generados. Los directorios \texttt{context/}, \texttt{events/}, \texttt{source\_buffer/} y los logs del generador se excluyen del bundle para que \texttt{validate} y \texttt{deploy} no intenten sincronizar artefactos masivos.
+    \item Imports robustos para ejecución en Databricks. Las reglas de calidad viven en \path{src/medallion_pipeline/rules/} y se cargan desde el \texttt{bundle.sourcePath} inyectado por el pipeline.
+    \item Capa silver con cuarentena explícita. Cada entidad tiene un flujo de evaluación y una tabla de cuarentena, lo que permite que el pipeline siga siendo trazable aunque en futuras cargas aparezcan registros inválidos.
+    \item Enriquecimiento de eventos con patrón stream-static. Para Hito 2 se mantiene \texttt{bronze\_usage} como flujo incremental y se cruza con una vista estática de etiquetas mensuales válidas.
+    \item Ejecución en modo triggered. El pipeline no queda ejecutándose de forma continua; se lanza bajo demanda o desde el job, procesa el lote disponible y libera recursos.
 \end{itemize}
 
-El enfoque aplicado fue pragmático: primero aislar la causa raíz, después aplicar el ajuste mínimo seguro y, finalmente, validar con ejecución completa. Este ciclo se repitió hasta alcanzar actualizaciones estables en estado \texttt{COMPLETED}.
+Con estos ajustes, la evidencia relevante es el resultado final: actualización completa en estado \texttt{COMPLETED}, tablas materializadas por capa y contrato de datos preparado para modelado.
 
 \subsection{Orquestación final del hito}
 
