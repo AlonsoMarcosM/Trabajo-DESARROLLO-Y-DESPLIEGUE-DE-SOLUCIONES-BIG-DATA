@@ -18,6 +18,7 @@ codigo/
 |-- databricks.yml
 |-- resources/
 |   |-- telco_churn.job.yml
+|   |-- telco_churn_ml.job.yml
 |   `-- telco_churn.pipeline.yml
 |-- notebooks/
 |   |-- 04_Feature_Store_Registration.py
@@ -71,6 +72,7 @@ codigo/
   - librerias Python de transformacion (`01/02/03`).
 - `resources/telco_churn.job.yml`
   - job de Hito 2 (`telco_churn_orchestration`).
+- `resources/telco_churn_ml.job.yml`
   - job de Hito 3 (`telco_churn_ml_orchestration`).
 
 ### 3.2 Donde se configuran `var.uc_*`

@@ -123,7 +123,8 @@ La implementación se articula en torno a Databricks Asset Bundles:
 
 - `codigo/databricks.yml` como punto de entrada de configuración.
 - `codigo/resources/telco_churn.pipeline.yml` para la definición del pipeline medallion.
-- `codigo/resources/telco_churn.job.yml` para la orquestación final en dos tareas.
+- `codigo/resources/telco_churn.job.yml` para la orquestación final de Hito 2 en dos tareas.
+- `codigo/resources/telco_churn_ml.job.yml` para la orquestación de modelado de Hito 3.
 
 Una decisión importante de esta fase fue consolidar un único workspace operativo para evitar límites de cuota y problemas de permisos del entorno inicial. Sobre ese workspace se normalizó la capa de gobierno en Unity Catalog con una estructura explícita y descriptiva:
 
@@ -323,7 +324,7 @@ La fase queda distribuida en notebooks y utilidades con responsabilidades separa
 - `08_Utils.py`: encapsula la lógica champion-challenger, gestión de aliases y registro de decisiones.
 - `08_Production.ipynb`: evalúa el candidato en test, compara contra `champion` y decide promoción o rechazo.
 
-La orquestación reproducible se define en `resources/telco_churn.job.yml` mediante el job `telco_churn_ml_orchestration`, con tres tareas secuenciales: `run_training_dataset_generation`, `run_mlflow_experimentation` y `run_production`.
+La orquestación reproducible se define en `resources/telco_churn_ml.job.yml` mediante el job `telco_churn_ml_orchestration`, con tres tareas secuenciales: `run_training_dataset_generation`, `run_mlflow_experimentation` y `run_production`.
 
 ### Generación del dataset de entrenamiento
 
