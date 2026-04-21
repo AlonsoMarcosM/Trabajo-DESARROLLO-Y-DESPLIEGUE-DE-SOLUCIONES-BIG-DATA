@@ -88,6 +88,9 @@ Ejecutar desde `codigo/`.
 
 ```powershell
 databricks auth login --host <workspace_host>
+
+databricks auth login --host https://dbc-5ae029e2-ed3d.cloud.databricks.com
+
 databricks auth profiles
 ```
 
