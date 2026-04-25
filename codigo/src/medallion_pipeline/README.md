@@ -1,6 +1,8 @@
 # Medallion Pipeline (Telco Churn)
 
 Este directorio contiene la logica de preparacion de datos del Hito 2.
+El modelado de Hito 3 no se ejecuta desde este pipeline declarativo; consume
+las tablas gold mediante notebooks y el job `telco_churn_ml_orchestration`.
 
 ## Capas implementadas
 
@@ -67,6 +69,7 @@ Por CLI:
 ```powershell
 databricks bundle run telco_churn -t dev
 databricks bundle run telco_churn_orchestration -t dev
+databricks bundle run telco_churn_ml_orchestration -t dev
 ```
 
 Por UI:
@@ -74,3 +77,4 @@ Por UI:
 1. Ejecutar pipeline `Telco Churn - Hito 2 Medallion ETL`.
 2. Ejecutar job `Telco Churn - Hito 2 Orchestration`.
 3. Verificar en `Catalog` que existen tablas bronze/silver/gold en `workspace.telco_churn`.
+4. Para Hito 3, ejecutar job `Telco Churn - Hito 3 ML Orchestration` y verificar el modelo `workspace.telco_churn.churn_lr_pipeline`.

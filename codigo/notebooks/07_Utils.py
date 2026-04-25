@@ -114,10 +114,12 @@ framework    = "pyspark.ml"
 
 uc_model_name = f"{catalog}.{database}.churn_lr_pipeline"
 
-# The experiment is always co-located with the assets of this project
+# Keep the experiment directly under the user's Workspace home. MLflow creates
+# the experiment if it does not exist, but it does not create missing parent
+# folders such as ".experiments/telco_churn" automatically.
 mlflow_experiment_name = "churn_detection_training"
 mlflow_experiment_path = str(
-    Path("/") / "Workspace" / "Users" / current_user / ".experiments" / database / mlflow_experiment_name
+    Path("/") / "Users" / current_user / f"{database}_{mlflow_experiment_name}"
 )
 
 
@@ -149,7 +151,7 @@ if delta_semantic_version == 0:
     validation_end = datetime(2024, 9, 30)
 else:
     # Subsequent versions: rolling window anchored to the previous cycle maximum date.
-    # ml.data_previous_max_date is the maximum label_available_date of the dataset
+    # ml.data_previous_max_date is the maximum usage_event_time of the dataset
     # before the last overwrite, persisted in the table properties by the data
     # generation notebook. Everything after that date in the current table becomes
     # the test window. Validation is the VALIDATION_WINDOW_MONTHS immediately before
@@ -328,8 +330,8 @@ boolean_statement = f"SELECT *, {boolean_cast_expressions} FROM __THIS__"
 # (gold_customer_aggregations via the online store).
 feature_engineering_statement = (
     "SELECT *, "
-    # Tenure in months derived from signup_date (always available at inference time)
-    "CAST(MONTHS_BETWEEN(label_available_date, signup_date) AS DOUBLE) AS tenure_months, "
+    # Tenure in months derived from signup_date using the prediction timestamp.
+    "CAST(MONTHS_BETWEEN(usage_event_time, signup_date) AS DOUBLE) AS tenure_months, "
     # High-value flag: bill above a representative threshold
     "CAST((bill_amount > 50.0) AS INT) AS is_high_bill, "
     # Late-payer flag: any overdue days in the window

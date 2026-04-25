@@ -1,9 +1,11 @@
 # Codigo - Guia completa de ejecucion (CLI y UI)
 
-Esta carpeta contiene la implementacion tecnica del Hito 2:
+Esta carpeta contiene la implementacion tecnica de los hitos 2 y 3:
 
 - Databricks Asset Bundle (`databricks.yml` + `resources/`)
 - pipeline Medallion (`bronze`, `silver`, `gold`)
+- notebooks de modelado y produccion ML (`05`, `07`, `08`)
+- job de orquestacion de Hito 3 (`telco_churn_ml_orchestration`)
 - generador de datos sinteticos masivo (`generate.py`)
 
 El objetivo de esta guia es que cualquier persona del equipo pueda replicar
@@ -16,9 +18,17 @@ codigo/
 |-- databricks.yml
 |-- resources/
 |   |-- telco_churn.job.yml
+|   |-- telco_churn_ml.job.yml
 |   `-- telco_churn.pipeline.yml
 |-- notebooks/
-|   `-- 04_Feature_Store_Registration.py
+|   |-- 04_Feature_Store_Registration.py
+|   |-- 05_Training_Dataset_Generation.ipynb
+|   |-- 07_Training_Job.ipynb
+|   |-- 07_Evaluation_Job.ipynb
+|   |-- 07_MLflow_Experimentation.ipynb
+|   |-- 07_Utils.py
+|   |-- 08_Production.ipynb
+|   `-- 08_Utils.py
 `-- src/medallion_pipeline/
     |-- rules/
     |   |-- __init__.py
@@ -60,6 +70,10 @@ codigo/
 - `resources/telco_churn.pipeline.yml`
   - recurso pipeline `telco_churn`.
   - librerias Python de transformacion (`01/02/03`).
+- `resources/telco_churn.job.yml`
+  - job de Hito 2 (`telco_churn_orchestration`).
+- `resources/telco_churn_ml.job.yml`
+  - job de Hito 3 (`telco_churn_ml_orchestration`).
 
 ### 3.2 Donde se configuran `var.uc_*`
 
@@ -88,6 +102,9 @@ Ejecutar desde `codigo/`.
 
 ```powershell
 databricks auth login --host <workspace_host>
+
+databricks auth login --host https://dbc-5ae029e2-ed3d.cloud.databricks.com
+
 databricks auth profiles
 ```
 
@@ -394,8 +411,64 @@ SELECT MIN(year_month) AS min_ym, MAX(year_month) AS max_ym
 FROM workspace.telco_churn.gold_churn_spine;
 ```
 
-## 12. Documentacion relacionada
+## 12. Ejecucion del job de Hito 3
+
+La guia del proyecto separa el modelado del pipeline declarativo Medallion. Por eso los notebooks de Hito 3 no se incluyen como librerias en `resources/telco_churn.pipeline.yml`; se ejecutan mediante el job `telco_churn_ml_orchestration`.
+
+Ejecutar desde `codigo/`:
+
+```powershell
+databricks bundle validate -t dev -p <perfil_databricks>
+databricks bundle deploy -t dev -p <perfil_databricks>
+databricks bundle run telco_churn_ml_orchestration -t dev -p <perfil_databricks>
+```
+
+Tareas del job:
+
+1. `run_training_dataset_generation`: crea `workspace.telco_churn.gold_churn_training_dataset`.
+2. `run_mlflow_experimentation`: ejecuta el grid search y registra el mejor modelo como `candidate`.
+3. `run_production`: evalua champion/challenger y actualiza aliases en Unity Catalog.
+
+Ultima ejecucion end-to-end validada:
+
+- job id: `588950994995073`
+- run id: `329240873651157`
+- estado: `SUCCESS`
+- modelo UC: `workspace.telco_churn.churn_lr_pipeline`
+- alias final: `champion` en version 2; `rejected` en version 3.
+
+## 13. Validacion funcional Hito 3
+
+Comprobar tabla de entrenamiento:
+
+```sql
+SELECT COUNT(*) AS total_rows,
+       SUM(CASE WHEN label_will_churn = 1 THEN 1 ELSE 0 END) AS churn_rows,
+       SUM(CASE WHEN label_will_churn = 0 THEN 1 ELSE 0 END) AS retained_rows,
+       MIN(usage_event_time) AS min_event_time,
+       MAX(usage_event_time) AS max_event_time
+FROM workspace.telco_churn.gold_churn_training_dataset;
+```
+
+Comprobar baseline de produccion:
+
+```sql
+SELECT COUNT(*) AS baseline_rows,
+       MIN(usage_event_time) AS min_event_time,
+       MAX(usage_event_time) AS max_event_time
+FROM workspace.telco_churn.gold_churn_test_baseline;
+```
+
+Comprobar modelo registrado:
+
+```powershell
+databricks registered-models get workspace.telco_churn.churn_lr_pipeline --include-aliases -p <perfil_databricks>
+databricks model-versions get-by-alias workspace.telco_churn.churn_lr_pipeline champion --include-aliases -p <perfil_databricks>
+```
+
+## 14. Documentacion relacionada
 
 - Pipeline interno: `src/medallion_pipeline/README.md`
 - Memoria Hito 2: `../documentacion/hito_2/memoria_hito_2.md`
+- Memoria Hito 3: `../documentacion/hito_3/memoria_hito_3.md`
 - Changelog tecnico: `CHANGELOG.md`

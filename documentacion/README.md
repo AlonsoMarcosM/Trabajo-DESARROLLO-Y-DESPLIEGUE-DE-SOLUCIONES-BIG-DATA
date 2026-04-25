@@ -28,6 +28,16 @@ Esta carpeta organiza la memoria tecnica del proyecto por hitos, manteniendo el 
   - Hito 3: modelado, experimentacion y evaluacion.
   - Hito 4: despliegue, monitorizacion y cierre.
 
+## Estado validado Hito 3
+
+- Memoria principal: `hito_3/memoria_hito_3.md`.
+- Job validado: `telco_churn_ml_orchestration` (`run_id`: `329240873651157`, estado `SUCCESS`).
+- Definicion del job: `../codigo/resources/telco_churn_ml.job.yml`.
+- Modelo registrado: `workspace.telco_churn.churn_lr_pipeline`.
+- Alias finales: `champion` version 2 y `rejected` version 3.
+- Tabla baseline: `workspace.telco_churn.gold_churn_test_baseline`.
+- Decision documentada: los notebooks de modelado no se insertan en `resources/telco_churn.pipeline.yml`; se orquestan por Job porque la guia separa Hito 3 del pipeline declarativo Medallion.
+
 ## Regla de formato
 
 - Los archivos `.md` deben estar en Markdown real.
