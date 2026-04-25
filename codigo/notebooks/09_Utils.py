@@ -1,7 +1,6 @@
 """
-Shared utilities for the production inference and label enrichment pipeline.
+Shared utilities for the production churn inference and label enrichment pipeline.
 """
-
 
 ###############################################################################
 # Imports
@@ -9,26 +8,36 @@ Shared utilities for the production inference and label enrichment pipeline.
 
 from databricks.feature_engineering import FeatureEngineeringClient, FeatureLookup
 
-
 ###############################################################################
 # Table configuration
 ###############################################################################
 
-spine_table = f"{catalog}.{database}.gold_fraud_spine"
+spine_table = f"{catalog}.{database}.gold_churn_spine"
 customer_profile_table = f"{catalog}.{database}.gold_customer_profile"
 customer_agg_table = f"{catalog}.{database}.gold_customer_aggregations"
-inference_enriched_table = f"{catalog}.{database}.gold_fraud_inference_enriched"
-fraud_labels_table = f"{catalog}.{database}.silver_fraud_events"
+inference_enriched_table = f"{catalog}.{database}.gold_churn_inference_enriched"
+churn_labels_table = f"{catalog}.{database}.silver_churn_events"
 
+###############################################################################
+# Column configuration
+###############################################################################
+
+customer_id_column = "customer_id"
+date_column = "event_date"
+label_column = "label_will_churn"
+prediction_column = "prediction"
+prob_churn_column = "prob_churn"
+model_version_col = "model_version"
+inference_timestamp_col = "inference_timestamp"
 
 ###############################################################################
 # Feature store configuration
 ###############################################################################
 
 entity_key = "customer_id"
-timestamp_key = "timestamp"
+timestamp_key = "window_end"
 
-# Static or slowly-changing customer profile features.
+# Static or slowly-changing customer profile features (from gold_customer_profile).
 # Must match exactly the feature_names used in 05_Training_Dataset_Generation
 # to guarantee that the enrichment is identical to training.
 profile_feature_names = [
@@ -36,72 +45,56 @@ profile_feature_names = [
     "age",
     "age_group",
     "gender",
-    "occupation",
-    "city_tier",
-    # Financial profile
-    "income_bracket",
-    "income_group",
-    "customer_segment",
-    "card_type",
-    # Account security and behaviour
-    "num_cards_issued",
-    "two_fa_enabled",
-    "email_verified",
-    "phone_verified",
-    "preferred_channel",
-    "loyalty_points_balance",
+    # Contract & plan
+    "contract_type",
+    "contract_risk_group",
+    "tariff_plan",
+    "monthly_fee",
+    "num_lines",
+    # Product bundles
+    "has_tv_bundle",
+    "has_fiber",
+    "has_roaming",
+    # Device & channel
+    "device_type",
+    "acquisition_channel",
+    "payment_method",
+    "paperless_billing",
+    "autopay",
     # Geography
-    "country"
+    "region",
+    "region_type",
+    # Baseline satisfaction
+    "nps_score_at_start"
 ]
 
-# Behavioral aggregations over rolling windows.
+# Monthly behavioral aggregations (from gold_customer_aggregations).
+# Churn signals focus on usage trends, payment behaviour and satisfaction.
 aggregation_feature_names = [
-    # 1-hour window (very short-term velocity)
-    "count_tx_1h",
-    "sum_amount_1h",
-    "avg_amount_1h",
-    "distinct_merchants_1h",
-    "count_cross_border_1h",
-    # 24-hour window (intra-day behaviour)
-    "count_tx_24h",
-    "sum_amount_24h",
-    "avg_amount_24h",
-    "max_amount_24h",
-    "distinct_merchants_24h",
-    "distinct_countries_24h",
-    "count_tor_vpn_24h",
-    "count_3ds_failed_24h",
-    # 7-day window (weekly pattern)
-    "count_tx_7d",
-    "sum_amount_7d",
-    "avg_amount_7d",
-    "distinct_merchants_7d",
-    "distinct_countries_7d",
-    "distinct_devices_7d",
-    # 30-day window (monthly baseline)
-    "count_tx_30d",
-    "sum_amount_30d",
-    "avg_amount_30d",
-    "max_amount_30d",
-    "min_amount_30d",
-    "distinct_merchants_30d",
-    "distinct_countries_30d",
-    "num_fraud_confirmed_30d",
-    "spend_24h_vs_avg_30d_ratio"
+    # Usage
+    "data_consumed_gb",
+    "call_minutes",
+    # Billing
+    "bill_amount",
+    "days_payment_late",
+    "bill_vs_data_ratio",
+    # Satisfaction & network
+    "nps_score",
+    "coverage_score"
 ]
 
 profile_lookup = FeatureLookup(
-    table_name = customer_profile_table,
-    feature_names = profile_feature_names,
-    lookup_key = entity_key,
-    timestamp_lookup_key = timestamp_key
+    table_name=customer_profile_table,
+    feature_names=profile_feature_names,
+    lookup_key=entity_key,
+    timestamp_lookup_key=timestamp_key
 )
 
 aggregations_lookup = FeatureLookup(
-    table_name = customer_agg_table,
-    feature_names = aggregation_feature_names,
-    lookup_key = entity_key,
-    timestamp_lookup_key = timestamp_key
+    table_name=customer_agg_table,
+    feature_names=aggregation_feature_names,
+    lookup_key=entity_key,
+    timestamp_lookup_key=timestamp_key
 )
 
 feature_lookups = [profile_lookup, aggregations_lookup]
@@ -113,5 +106,4 @@ print(f"Aggregation features ({len(aggregation_feature_names)}): {aggregation_fe
 print(f"Total feature columns: {len(profile_feature_names) + len(aggregation_feature_names)}")
 print()
 
-
-print("09_Utils.py script loaded successfully.")
+print("09_Utils_churn.py script loaded successfully.")
