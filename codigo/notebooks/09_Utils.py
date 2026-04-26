@@ -2,11 +2,13 @@
 Shared utilities for the production churn inference and label enrichment pipeline.
 """
 
+
 ###############################################################################
 # Imports
 ###############################################################################
 
 from databricks.feature_engineering import FeatureEngineeringClient, FeatureLookup
+
 
 ###############################################################################
 # Table configuration
@@ -18,24 +20,26 @@ customer_agg_table = f"{catalog}.{database}.gold_customer_aggregations"
 inference_enriched_table = f"{catalog}.{database}.gold_churn_inference_enriched"
 churn_labels_table = f"{catalog}.{database}.silver_churn_events"
 
+
 ###############################################################################
 # Column configuration
 ###############################################################################
 
 customer_id_column = "customer_id"
-date_column = "event_date"
+date_column = "year_month"
 label_column = "label_will_churn"
 prediction_column = "prediction"
 prob_churn_column = "prob_churn"
 model_version_col = "model_version"
 inference_timestamp_col = "inference_timestamp"
 
+
 ###############################################################################
 # Feature store configuration
 ###############################################################################
 
 entity_key = "customer_id"
-timestamp_key = "window_end"
+timestamp_key = "usage_event_time"
 
 # Static or slowly-changing customer profile features (from gold_customer_profile).
 # Must match exactly the feature_names used in 05_Training_Dataset_Generation
@@ -84,26 +88,27 @@ aggregation_feature_names = [
 ]
 
 profile_lookup = FeatureLookup(
-    table_name=customer_profile_table,
-    feature_names=profile_feature_names,
-    lookup_key=entity_key,
-    timestamp_lookup_key=timestamp_key
+    table_name = customer_profile_table,
+    feature_names = profile_feature_names,
+    lookup_key = entity_key,
+    timestamp_lookup_key = timestamp_key
 )
 
 aggregations_lookup = FeatureLookup(
-    table_name=customer_agg_table,
-    feature_names=aggregation_feature_names,
-    lookup_key=entity_key,
-    timestamp_lookup_key=timestamp_key
+    table_name = customer_agg_table,
+    feature_names = aggregation_feature_names,
+    lookup_key = entity_key,
+    timestamp_lookup_key = timestamp_key
 )
 
 feature_lookups = [profile_lookup, aggregations_lookup]
 
-exclude_columns = ["label_available_date"]
+exclude_columns = ["churn_date", "label_available_date"]
 
 print(f"Profile features ({len(profile_feature_names)}): {profile_feature_names}")
 print(f"Aggregation features ({len(aggregation_feature_names)}): {aggregation_feature_names}")
 print(f"Total feature columns: {len(profile_feature_names) + len(aggregation_feature_names)}")
 print()
+
 
 print("09_Utils_churn.py script loaded successfully.")
