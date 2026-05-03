@@ -69,7 +69,10 @@ profile_feature_names = [
     "region",
     "region_type",
     # Baseline satisfaction
-    "nps_score_at_start"
+    "nps_score_at_start",
+    #
+    "is_active",
+    "signup_date",
 ]
 
 # Monthly behavioral aggregations (from gold_customer_aggregations).
@@ -84,7 +87,7 @@ aggregation_feature_names = [
     "bill_vs_data_ratio",
     # Satisfaction & network
     "nps_score",
-    "coverage_score"
+    "coverage_score",
 ]
 
 profile_lookup = FeatureLookup(
@@ -103,7 +106,7 @@ aggregations_lookup = FeatureLookup(
 
 feature_lookups = [profile_lookup, aggregations_lookup]
 
-exclude_columns = ["churn_date", "label_available_date"]
+exclude_columns = ["churn_date"]
 
 print(f"Profile features ({len(profile_feature_names)}): {profile_feature_names}")
 print(f"Aggregation features ({len(aggregation_feature_names)}): {aggregation_feature_names}")
