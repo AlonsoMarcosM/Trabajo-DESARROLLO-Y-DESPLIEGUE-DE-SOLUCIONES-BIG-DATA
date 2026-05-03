@@ -1,0 +1,43 @@
+resources:
+  jobs:
+    telco_churn_ml_orchestration:
+      name: "Telco Churn - Hito 3 ML Orchestration"
+      description: "Job de Hito 3: ejecuta Training Dataset Generation, MLflow Experimentation y Production."
+      email_notifications:
+        on_failure:
+          - example@example.es
+        on_success:
+          - example@example.es
+      schedule:
+        quartz_cron_expression: "0 0 1 ? * MON"
+        timezone_id: "UTC"
+        pause_status: UNPAUSED
+      tasks:
+        - task_key: run_training_dataset_generation
+          description: "Generacion del dataset de entrenamiento"
+          notebook_task:
+            notebook_path: ../notebooks/05_Training_Dataset_Generation.ipynb
+            source: WORKSPACE
+            base_parameters:
+              catalog: ${var.uc_catalog}
+              schema: ${var.uc_schema}
+        - task_key: run_mlflow_experimentation
+          description: "Experimentacion y entrenamiento con MLflow"
+          depends_on:
+            - task_key: run_training_dataset_generation
+          notebook_task:
+            notebook_path: ../notebooks/07_MLflow_Experimentation.ipynb
+            source: WORKSPACE
+            base_parameters:
+              catalog: ${var.uc_catalog}
+              schema: ${var.uc_schema}
+        - task_key: run_production
+          description: "Despliegue y registro del modelo en produccion"
+          depends_on:
+            - task_key: run_mlflow_experimentation
+          notebook_task:
+            notebook_path: ../notebooks/08_Production.ipynb
+            source: WORKSPACE
+            base_parameters:
+              catalog: ${var.uc_catalog}
+              schema: ${var.uc_schema}
