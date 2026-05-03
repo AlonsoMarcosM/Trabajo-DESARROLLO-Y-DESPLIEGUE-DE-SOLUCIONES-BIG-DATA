@@ -1,28 +1,62 @@
 ﻿resources:
-  jobs:
-    telco_churn_orchestration:
-      name: "Telco Churn - Hito 2 Orchestration"
-      description: "Job final de Hito 2: ejecuta pipeline Medallion y despues simulacion de Feature Store."
-      email_notifications:
-        on_failure:
-          - example@example.es
-        on_success:
-          - example@example.es
-      tasks:
-        - task_key: run_telco_pipeline
-          description: "Ejecucion del pipeline Medallion Telco Churn"
-          pipeline_task:
-            pipeline_id: ${resources.pipelines.telco_churn.id}
-        - task_key: run_feature_store_registration_simulation
-          description: "Ejecucion del notebook de registro/simulacion de Feature Store"
-          depends_on:
-            - task_key: run_telco_pipeline
-          notebook_task:
-            notebook_path: ../notebooks/04_Feature_Store_Registration.py
-            source: WORKSPACE
-            base_parameters:
-              catalog: ${var.uc_catalog}
-              schema: ${var.uc_schema}
+  telco_churn_simulation:
+    name: "Telco Churn - Simulation"
+    description: "Inyecta 1 hora de datos del buffer en events cada hora (interactions, labels, usage)."
+    email_notifications:
+      on_failure:
+        - example@example.es
+    schedule:
+      quartz_cron_expression: "0 0 * * * ?"
+      timezone_id: "UTC"
+      pause_status: UNPAUSED
+    tasks:
+      - task_key: run_simulation
+        description: "Inyeccion incremental de 1 hora de datos del buffer"
+        notebook_task:
+          notebook_path: ../notebooks/10_Simulation.ipynb
+          source: WORKSPACE
+          base_parameters:
+            catalog: ${var.uc_catalog}
+            schema: ${var.uc_schema}
+            hours_to_inject: "1"
+
+  telco_churn_orchestration:
+    name: "Telco Churn - Hito 2 Orchestration"
+    description: "Job final de Hito 2: ejecuta pipeline Medallion y despues simulacion de Feature Store."
+    email_notifications:
+      on_failure:
+        - example@example.es
+      on_success:
+        - example@example.es
+    schedule:
+      quartz_cron_expression: "0 0 3 * * ?"
+      timezone_id: "UTC"
+      pause_status: UNPAUSED
+    tasks:
+      - task_key: run_telco_pipeline
+        description: "Ejecucion del pipeline Medallion Telco Churn"
+        pipeline_task:
+          pipeline_id: ${resources.pipelines.telco_churn.id}
+      - task_key: run_feature_store_registration_simulation
+        description: "Ejecucion del notebook de registro/simulacion de Feature Store"
+        depends_on:
+          - task_key: run_telco_pipeline
+        notebook_task:
+          notebook_path: ../notebooks/04_Feature_Store_Registration.py
+          source: WORKSPACE
+          base_parameters:
+            catalog: ${var.uc_catalog}
+            schema: ${var.uc_schema}
+      - task_key: run_inference_and_label_enrichment
+        description: "Inferencia en lote y propagacion de etiquetas reales"
+        depends_on:
+          - task_key: run_feature_store_registration_simulation
+        notebook_task:
+          notebook_path: ../notebooks/09_Inference_And_Label_Enrichment.ipynb
+          source: WORKSPACE
+          base_parameters:
+            catalog: ${var.uc_catalog}
+            schema: ${var.uc_schema}
     telco_churn_ml_orchestration:
       name: "Telco Churn - Hito 3 ML Orchestration"
       description: "Job de Hito 3: ejecuta Training Dataset Generation, MLflow Experimentation y Production."
@@ -31,6 +65,10 @@
           - example@example.es
         on_success:
           - example@example.es
+      schedule:
+        quartz_cron_expression: "0 0 3 * * ?"
+        timezone_id: "UTC"
+        pause_status: UNPAUSED
       tasks:
         - task_key: run_training_dataset_generation
           description: "Generacion del dataset de entrenamiento"
