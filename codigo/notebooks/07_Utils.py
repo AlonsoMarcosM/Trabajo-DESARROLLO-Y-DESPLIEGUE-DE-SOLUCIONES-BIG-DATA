@@ -94,6 +94,7 @@ customer_id_column  = CUSTOMER_ID_COLUMN
 # On the first version of the table, the split falls back to the defaults.
 TRAINING_WINDOW_MONTHS   = 12
 VALIDATION_WINDOW_MONTHS = 3
+FALLBACK_TEST_WINDOW_MONTHS = 1
 
 # Random seed: shared so run tags built in both notebooks are identical
 seed = 45127
@@ -157,7 +158,28 @@ else:
     # the test window. Validation is the VALIDATION_WINDOW_MONTHS immediately before
     # that cutoff. Training is the TRAINING_WINDOW_MONTHS immediately before validation.
     previous_max_date_row = properties_df.filter("key = 'ml.data_previous_max_date'").first()
-    validation_end = datetime.strptime(previous_max_date_row["value"], "%Y-%m-%d")
+    current_max_date_row = properties_df.filter("key = 'ml.data_max_date'").first()
+    if previous_max_date_row is None or not previous_max_date_row["value"]:
+        raise ValueError(
+            f"{training_table} has semantic version {delta_semantic_version} "
+            "but does not define ml.data_previous_max_date."
+        )
+    if current_max_date_row is None or not current_max_date_row["value"]:
+        raise ValueError(
+            f"{training_table} has semantic version {delta_semantic_version} "
+            "but does not define ml.data_max_date."
+        )
+
+    previous_max_date = datetime.strptime(previous_max_date_row["value"], "%Y-%m-%d")
+    current_max_date = datetime.strptime(current_max_date_row["value"], "%Y-%m-%d")
+    if previous_max_date >= current_max_date:
+        print(
+            "Warning: ml.data_previous_max_date is not earlier than ml.data_max_date. "
+            f"Using the last {FALLBACK_TEST_WINDOW_MONTHS} month(s) as test window."
+        )
+        validation_end = current_max_date - relativedelta(months=FALLBACK_TEST_WINDOW_MONTHS)
+    else:
+        validation_end = previous_max_date
     train_end      = validation_end - relativedelta(months=VALIDATION_WINDOW_MONTHS)
 
 train_start = train_end - relativedelta(months=TRAINING_WINDOW_MONTHS)

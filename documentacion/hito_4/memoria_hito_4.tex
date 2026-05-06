@@ -1,51 +1,1285 @@
-﻿\documentclass[12pt,a4paper]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[spanish]{babel}
-\usepackage{geometry}
-\geometry{margin=2.5cm}
+\documentclass[12pt,a4paper]{article}
 
-\title{Hito 4: Despliegue y monitorización}
-\author{Alonso Marcos Muñoz (\texttt{Alonso.Marcos@alu.uclm.es}) \\ Jose Barros Ribademar (\texttt{Jose.Barros1@alu.uclm.es})}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\else
+  \usepackage{fontspec}
+  \setmainfont{Latin Modern Roman}
+  \setsansfont{Latin Modern Sans}
+  \setmonofont{Latin Modern Mono}[Scale=MatchLowercase]
+\fi
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{microtype}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\PassOptionsToPackage{hyphens}{url}
+\usepackage{xurl}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{adjustbox}
+\usepackage{fvextra}
+\usepackage{ragged2e}
+
+\geometry{margin=2.5cm}
+\setstretch{1.08}
+\renewcommand{\arraystretch}{1.4}
+\setlist[itemize]{itemsep=0.2em, topsep=0.3em, leftmargin=*}
+\setlist[enumerate]{itemsep=0.2em, topsep=0.3em, leftmargin=*}
+\urlstyle{tt}
+\setlength{\parskip}{0.6em}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{8em}
+\tolerance=3000
+\hbadness=10000
+\hfuzz=1pt
+\sloppy
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!50!black,
+  pdftitle={Memoria técnica incremental del proyecto (Hitos 1, 2, 3 y 4)},
+  pdfauthor={Alonso Marcos Muñoz; Jose Barros Ribademar}
+}
+
+\title{\textbf{Memoria técnica incremental del proyecto (Hitos 1, 2, 3 y 4)}}
+\author{
+\textbf{Asignatura:} Desarrollo y Despliegue de Soluciones Big Data \\
+\textbf{Máster:} Máster Universitario en Big Data y Computación en la Nube \\
+\textbf{Curso académico:} 2025--2026 \\
+\\
+Alonso Marcos Muñoz \\
+\nolinkurl{Alonso.Marcos@alu.uclm.es} \\
+\\
+Jose Barros Ribademar \\
+\nolinkurl{Jose.Barros1@alu.uclm.es}
+}
 \date{Mayo de 2026}
 
 \begin{document}
+
 \maketitle
+\tableofcontents
+\newpage
 
-\section{Datos de la entrega}
+
+\section*{Datos de la entrega}
+
 \begin{itemize}
-  \item Asignatura: DESARROLLO Y DESPLIEGUE DE SOLUCIONES BIG DATA.
-  \item Máster: Máster Universitario en Big Data y Computación en la Nube.
-  \item Curso académico: 2025-2026.
+\item Asignatura: \textbf{Desarrollo y Despliegue de Soluciones Big Data}
+\item Máster: \textbf{Máster Universitario en Big Data y Computación en la Nube}
+\item Curso académico: \textbf{2025-2026}
+\item Integrantes:
+\item Alonso Marcos Muñoz (\nolinkurl{Alonso.Marcos@alu.uclm.es})
+\item Jose Barros Ribademar (\nolinkurl{Jose.Barros1@alu.uclm.es})
 \end{itemize}
 
-\section{Objetivo del hito}
-Poner en operación el modelo seleccionado y cerrar un ciclo funcional de scoring, activación de campañas y monitorización técnica y de negocio.
+\bigskip\hrule\bigskip
 
-\section{Estrategia de despliegue}
-Se adopta un despliegue batch para controlar riesgo y coste en la primera versión. Se priorizan estabilidad, trazabilidad y capacidad de rollback.
+\section{Hito 1: Alcance y viabilidad}
 
-\section{Integración operativa}
-El flujo operativo incluye scoring de churn, entrega de segmentos de campaña y realimentación con resultados para iteraciones posteriores.
+\subsection{Introducción del hito}
 
-\section{Monitorización}
-\subsection{Técnica}
-Estado de ejecuciones, tiempos de pipeline y calidad de datos de entrada.
+El objetivo de este primer hito es cerrar el alcance del proyecto con una justificación técnica y económica suficiente para sustentar su ejecución durante el resto de la asignatura. En esta fase no se plantea un prototipo parcial, sino una propuesta completa de trabajo que permita defender qué problema de negocio se pretende resolver, por qué una arquitectura de datos distribuida es adecuada y qué condiciones de viabilidad deben cumplirse para que el proyecto sea defendible en términos académicos y profesionales.\par
 
-\subsection{Modelo}
-Evolución de recall/precisión, señales de drift y criterios de reentrenamiento.
+La memoria se ha redactado como documento de base para los siguientes hitos, de forma que cada decisión tomada en febrero de 2026 quede trazada con su hipótesis asociada y pueda validarse posteriormente con resultados de implementación. La fecha oficial de cierre del hito es el \textbf{27 de febrero de 2026}.\par
 
-\subsection{Negocio}
-Clientes retenidos, incentivos evitados y comparación entre ROI estimado y observado.
+\subsection{Alcance y viabilidad}
 
-\section{Riesgos y respuesta}
+\subsubsection{Definición del problema de negocio}
+
+La empresa de telecomunicaciones analizada gestiona una cartera activa de 2.000.000 de clientes particulares en un mercado muy competitivo. En el escenario de partida se observa una rotación mensual del 3\%, equivalente a 60.000 bajas cada mes. Esta dinámica refleja que las campañas generalistas de retención no están siendo suficientes para priorizar a los clientes con mayor probabilidad de abandono y mayor impacto económico.\par
+
+Desde el punto de vista financiero, el problema se concentra en dos frentes. Por un lado, se estima que 40.000 bajas mensuales son potencialmente recuperables y que cada cliente perdido supone, de media, 100 euros de margen neto anual no capturado. Por otro lado, la compañía aplica descuentos de forma poco precisa sobre una parte de clientes que no presenta riesgo real de fuga, lo que incrementa el coste comercial sin retorno proporcional.\par
+
+\begin{adjustbox}{max width=\textwidth}
+$\displaystyle \text{Pérdida por fugas recuperables} = 40.000 \times 100 = 4.000.000\ \text{EUR/mes}$
+\end{adjustbox}
+
+\begin{adjustbox}{max width=\textwidth}
+$\displaystyle \text{Coste por incentivos mal asignados} = 100.000 \times 10 = 1.000.000\ \text{EUR/mes}$
+\end{adjustbox}
+
+\begin{adjustbox}{max width=\textwidth}
+$\displaystyle \text{Impacto económico mensual estimado} = 5.000.000\ \text{EUR/mes}$
+\end{adjustbox}
+
+Este volumen de pérdida justifica abordar el problema con una solución analítica que permita identificar mejor el riesgo de churn y mejorar la asignación de incentivos.\par
+
+\subsubsection{Análisis y selección de la solución técnica}
+
+Para resolver el caso se valoraron tres enfoques: reglas heurísticas, aprendizaje automático en entorno monolítico y arquitectura big data distribuida. El enfoque heurístico ofrece rapidez inicial, pero su mantenimiento crece de forma no lineal al aumentar la casuística y sufre cuando cambian los patrones de comportamiento. El enfoque monolítico con machine learning mejora la capacidad predictiva, aunque introduce limitaciones de escalabilidad, de trazabilidad operativa y de incorporación de nuevas fuentes en escenarios de mayor volumen.\par
+
+La alternativa distribuida, basada en un pipeline de datos en Databricks con arquitectura medallion, se selecciona porque se ajusta mejor al tamaño de la base de clientes, permite evolucionar el sistema por capas (bronze, silver y gold) y facilita la gobernanza técnica del proyecto. Esta decisión no se fundamenta en complejidad tecnológica por sí misma, sino en su adecuación al problema y en su coherencia con los objetivos formativos de la asignatura.\par
+
+La justificación big data se apoya sobre varias de las "Vs" vistas en la asignatura, pero aplicadas al caso y no como teoría aislada. La "V" de volumen aparece en los millones de clientes y decenas de millones de eventos mensuales que se materializan después en bronze y silver. La "V" de variedad aparece porque se combinan datos de contexto de cliente, uso, facturación, interacciones y etiquetas de churn, con formatos CSV y JSON y ritmos de llegada distintos. La "V" de veracidad se aborda con reglas de calidad, cuarentena y trazabilidad de fichero de origen. La "V" de velocidad no se interpreta aquí como latencia de milisegundos, porque el negocio no exige decidir en tiempo real, sino como capacidad de actualizar periódicamente lotes grandes de datos sin rehacer manualmente todo el histórico. Esta lectura evita sobredimensionar el problema y explica por qué la solución elegida es batch distribuida y no streaming estricto.\par
+
+\subsubsection{Evaluación de la viabilidad}
+
+\paragraph{Viabilidad técnica}
+
+La viabilidad técnica se considera favorable por cuatro motivos. En primer lugar, existe masa crítica de datos para entrenar y evaluar modelos de clasificación supervisada. En segundo lugar, el problema tiene una definición clara de variable objetivo (baja/no baja) y un marco temporal razonable para construir etiquetas y ventanas de observación. En tercer lugar, se dispone de señales potencialmente explicativas, como antigüedad del cliente, uso de servicios, incidencias, facturación e historial de interacción comercial. En cuarto lugar, la ejecución en modo batch reduce el riesgo de implementación temprana y permite priorizar robustez, reproducibilidad y calidad del dato antes de plantear escenarios de inferencia más exigentes.\par
+
+\paragraph{Viabilidad económica}
+
+El escenario económico se ha planteado con hipótesis conservadoras para evitar sobreestimar el impacto. Si el sistema consigue reducir un 5\% las fugas recuperables y, en paralelo, disminuir un 5\% el coste de incentivos mal dirigidos, el beneficio mensual esperado sería de 250.000 euros.\par
+
+\begin{adjustbox}{max width=\textwidth}
+$\displaystyle \text{Beneficio por mejora en fugas} = 4.000.000 \times 0{,}05 = 200.000\ \text{EUR/mes}$
+\end{adjustbox}
+
+\begin{adjustbox}{max width=\textwidth}
+$\displaystyle \text{Beneficio por mejora en incentivos} = 1.000.000 \times 0{,}05 = 50.000\ \text{EUR/mes}$
+\end{adjustbox}
+
+\begin{adjustbox}{max width=\textwidth}
+$\displaystyle \text{Beneficio total estimado} = 250.000\ \text{EUR/mes}$
+\end{adjustbox}
+
+En cuanto a costes, se considera una carga mensual de 10.000 euros de dedicación técnica y 1.100 euros de infraestructura cloud, lo que sitúa el coste total en 11.100 euros al mes.\par
+
+\begin{adjustbox}{max width=\textwidth}
+$\displaystyle \text{ROI mensual} = \left(\frac{250.000 - 11.100}{11.100}\right)\times 100 = 2.152\%$
+\end{adjustbox}
+
+\begin{adjustbox}{max width=\textwidth}
+$\displaystyle \text{Payback aproximado} = \frac{11.100}{250.000}\times 30 = 1{,}3\ \text{días}$
+\end{adjustbox}
+
+Aunque estos resultados dependen de hipótesis que deberán contrastarse en los hitos de datos y modelado, el orden de magnitud obtenido muestra que el caso tiene sentido económico incluso en un escenario prudente.\par
+
+\paragraph{Viabilidad ética y legal}
+
+La propuesta incorpora desde el inicio restricciones de cumplimiento alineadas con RGPD y con buenas prácticas de IA aplicada. Se prevé seudonimización de identificadores, control de accesos sobre datasets sensibles y trazabilidad de transformaciones y versiones de modelo. Además, se incluye evaluación de sesgo mediante métricas de equidad, con el objetivo de detectar desviaciones de rendimiento entre grupos y evitar decisiones comerciales sistemáticamente desfavorables para colectivos concretos.\par
+
+\subsection{Planificación y recursos}
+
+\subsubsection{Objetivos de negocio y traducción técnica}
+
+Los objetivos operativos para el proyecto son reducir en un 5\% la pérdida asociada a fugas recuperables y reducir en un 5\% el coste de incentivos innecesarios. Traducido a magnitudes de seguimiento mensual, esto implica pasar de 40.000 a 38.000 bajas recuperables y de 100.000 a 95.000 incentivos potencialmente mal asignados. En términos técnicos, estos objetivos se transforman en tres líneas de trabajo: mejorar la capacidad de detección temprana del riesgo de churn, aumentar la precisión de segmentación para campañas de retención y mantener estabilidad de pipeline para garantizar repetibilidad de resultados.\par
+
+\subsubsection{Organización del equipo}
+
+El trabajo se organiza en una estructura colaborativa de dos perfiles complementarios. Una parte se centra en ingeniería de datos y MLOps, abarcando ingesta, control de calidad, orquestación y trazabilidad del pipeline. La otra parte se orienta al modelado, incluyendo construcción de variables, entrenamiento, evaluación y análisis de error. Esta distribución no es rígida; se revisa de forma continua para equilibrar carga y acelerar resolución de incidencias.\par
+
+\subsubsection{Fuentes de datos y stack tecnológico}
+
+La solución se apoyará en cuatro fuentes funcionales: maestro de clientes, histórico de bajas, registros de uso y facturación, e histórico de campañas con respuesta observada. Sobre estas fuentes se implementará un pipeline en Databricks y Delta Lake, con procesamiento distribuido en Spark, modelado con Spark MLlib y seguimiento experimental mediante MLflow. El control de versiones y la coordinación del desarrollo se mantienen en GitHub para preservar trazabilidad técnica y facilitar auditoría del trabajo.\par
+
+\subsubsection{Cronograma oficial del proyecto}
+
+El calendario de la asignatura queda estructurado en cuatro hitos consecutivos: Hito 1 (Alcance y viabilidad) del 24/02/2026 al 27/02/2026; Hito 2 (Preparación y gestión de datos) del 28/02/2026 al 20/03/2026; Hito 3 (Modelado y experimentación) del 21/03/2026 al 17/04/2026; y Hito 4 (Despliegue y monitorización) del 18/04/2026 al 01/05/2026. La planificación del presente documento está alineada con ese marco oficial.\par
+
+\subsection{Cierre del Hito 1}
+
+Con este hito queda definido un alcance técnicamente consistente y económicamente justificado para el proyecto de churn telco. La propuesta establece el problema de negocio, argumenta la elección arquitectónica, delimita condiciones de viabilidad y fija objetivos medibles para los siguientes entregables. El siguiente paso es ejecutar el Hito 2 con foco en preparación del dato, validación de calidad y materialización del pipeline medallion en el entorno de trabajo.\par
+
+\bigskip\hrule\bigskip
+
+\section{Hito 2: Preparación y gestión de datos}
+
+\subsection{Objetivo del hito}
+
+El objetivo real de este segundo hito ha sido pasar del diseño conceptual del Hito 1 a una implementación de datos que funcione de verdad en Databricks, con ejecución completa y repetible. En otras palabras, no se trataba solo de “tener scripts”, sino de validar que el proyecto podía desplegarse, correr sin intervención manual y dejar un resultado coherente para el inicio de Hito 3.\par
+
+Para conseguirlo, el trabajo se organizó como un proceso incremental: primero estabilizamos el entorno de ejecución y el bundle, después cerramos la arquitectura medallion por capas, y finalmente incorporamos orquestación tipo producción (pipeline + notebook final), siguiendo el patrón del proyecto de referencia del profesor pero adaptado a nuestra temática de churn telco. La arquitectura medallion no se entiende aquí como una nomenclatura decorativa, sino como una forma de separar responsabilidades: bronze conserva el dato crudo y auditable, silver aplica calidad y normalización, y gold contiene entidades ya preparadas para analítica y machine learning. Esta separación permite explicar dónde se corrige un problema sin mezclar ingesta, reglas de negocio y variables de modelado en el mismo bloque de código.\par
+
+\subsection{Implementación en Databricks}
+
+La implementación se articula en torno a Databricks Asset Bundles:\par
+
 \begin{itemize}
-  \item Caída de pipeline: reintento y rollback al último resultado válido.
-  \item Degradación del modelo: alertas por umbral y plan de reentrenamiento.
-  \item Baja adopción operativa: documentación clara y validación con negocio.
+\item \nolinkurl{codigo/databricks.yml} como punto de entrada de configuración.
+\item \nolinkurl{codigo/resources/telco_churn.pipeline.yml} para la definición del pipeline medallion.
+\item \nolinkurl{codigo/resources/telco_churn_orchestration.job.yml} para la orquestación diaria de datos e inferencia.
+\item \nolinkurl{codigo/resources/telco_churn_ml_orchestration.job.yml} para la orquestación de modelado de Hito 3.
+\item \nolinkurl{codigo/resources/telco_churn_simulation.job.yml} para la simulación horaria de datos de producción.
 \end{itemize}
 
-\section{Resultado esperado}
-Cierre del proyecto con flujo extremo a extremo en funcionamiento: datos, modelo, decisión comercial y medición de impacto.
+Una decisión importante de esta fase fue consolidar un único workspace operativo para evitar límites de cuota y problemas de permisos del entorno inicial. Sobre ese workspace se normalizó la capa de gobierno en Unity Catalog con una estructura explícita y descriptiva:\par
 
+\begin{itemize}
+\item Catálogo: \nolinkurl{workspace}
+\item Esquema operativo del proyecto: \nolinkurl{workspace.telco_churn}
+\item Volumen de entrada: volumen UC \nolinkurl{landing_zone} dentro de \nolinkurl{workspace.telco_churn}
+\end{itemize}
+
+Además de la estructura, se añadieron descripciones visibles en catálogo, esquema, volumen y pipeline para que cualquier miembro del equipo pueda entender rápidamente qué recurso es oficial y cuál no, directamente desde la UI de Databricks, sin tener que abrir código local.\par
+
+Durante la fase de despliegue apareció una incidencia crítica de operativa (\nolinkurl{413 Request Entity Too Large}) al intentar sincronizar datos masivos junto con el bundle. La solución fue separar de forma estricta “código versionable” y “artefacto generado”, excluyendo del \nolinkurl{sync} las salidas generadas por el simulador y los logs de generación. Este ajuste fue clave para estabilizar \nolinkurl{validate/deploy} y dejar un flujo reproducible para ambos integrantes del equipo.\par
+
+\subsection{Fuentes de datos y ventana temporal}
+
+La generación de datos sintéticos se realiza con \nolinkurl{codigo/src/medallion_pipeline/utilities/generate.py}. Este script crea el maestro de clientes, los eventos mensuales de uso, interacciones y etiquetas, y una zona adicional de producción simulada para datos de 2025 con deriva.\par
+
+En la práctica, el script genera un volumen de información suficientemente grande para tensionar la ejecución en Free Edition y obligar a tomar decisiones técnicas reales de rendimiento. Esto era un objetivo del hito: demostrar un escenario cercano a Big Data, no un ejemplo mínimo.\par
+
+Desde el punto de vista temporal, en Hito 2 se decidió mantener una frontera clara entre histórico y producción simulada:\par
+
+\begin{itemize}
+\item La zona histórica de eventos se trata como base de entrenamiento (2023-2024).
+\item La zona de producción simulada se conserva como bloque de 2025 con deriva, útil para validación temporal posterior.
+\end{itemize}
+
+Esta separación evita mezclar periodos sin control y deja preparado el terreno para un Hito 3 metodológicamente correcto, especialmente en lo relativo a fuga temporal de información.\par
+
+\subsection{Arquitectura medallion ejecutada}
+
+A continuación se describe cada capa por separado para que quede claro qué responsabilidad tiene, qué tablas materializa y qué datos contiene cada salida. Los recuentos indicados corresponden a la carga histórica usada en Hito 2: maestro de clientes y eventos de 2023-2024. Los datos de 2025 se mantienen como producción simulada con deriva y no entran automáticamente en estas tablas si no se amplía la ingesta.\par
+
+\subsubsection{Capa bronze: ingesta y trazabilidad}
+
+La capa bronze se implementa en \nolinkurl{codigo/src/medallion_pipeline/transformations/01_bronze_ingestion.py}. Su responsabilidad es conservar el dato de entrada con la mínima transformación posible y añadir metadatos técnicos de auditoría. El maestro de clientes se lee como batch porque es una fotografía de contexto, mientras que uso, etiquetas e interacciones se ingieren con Auto Loader en modo incremental. Auto Loader es relevante porque permite descubrir ficheros nuevos en la landing zone sin listar manualmente todos los directorios ni reingerir el histórico completo; en nuestro caso encaja con la llegada particionada por año y mes de los eventos JSON.\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Tabla materializada & \RaggedRight\arraybackslash Filas & \RaggedRight\arraybackslash Columnas generadas & \RaggedRight\arraybackslash Contenido \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{bronze_customers} & \RaggedRight\arraybackslash 3.050.000 & \RaggedRight\arraybackslash \nolinkurl{customer_id}, \nolinkurl{customer_updated_at}, \nolinkurl{age}, \nolinkurl{gender}, \nolinkurl{contract_type}, \nolinkurl{region}, \nolinkurl{region_type}, \nolinkurl{tariff_plan}, \nolinkurl{monthly_fee}, \nolinkurl{num_lines}, \nolinkurl{device_type}, \nolinkurl{acquisition_channel}, \nolinkurl{payment_method}, \nolinkurl{signup_date}, \nolinkurl{has_tv_bundle}, \nolinkurl{has_fiber}, \nolinkurl{has_roaming}, \nolinkurl{paperless_billing}, \nolinkurl{autopay}, \nolinkurl{nps_score_at_start}, \nolinkurl{is_active}, \nolinkurl{ingestion_timestamp}, \nolinkurl{source_file} & \RaggedRight\arraybackslash Maestro de clientes sintético. Mantiene atributos demográficos, contractuales, comerciales y de facturación, más trazabilidad de ingesta. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{bronze_usage} & \RaggedRight\arraybackslash 32.121.558 & \RaggedRight\arraybackslash \nolinkurl{bill_amount}, \nolinkurl{bill_overage}, \nolinkurl{call_minutes}, \nolinkurl{coverage_score}, \nolinkurl{customer_id}, \nolinkurl{data_consumed_gb}, \nolinkurl{days_active}, \nolinkurl{days_payment_late}, \nolinkurl{nps_score}, \nolinkurl{roaming_gb}, \nolinkurl{sms_count}, \nolinkurl{speed_mbps}, \nolinkurl{tariff_plan}, \nolinkurl{year_month}, \nolinkurl{_rescued_data}, \nolinkurl{ingestion_timestamp}, \nolinkurl{source_file} & \RaggedRight\arraybackslash Eventos mensuales de uso y facturación por cliente durante 2023-2024. Es la principal fuente de señales dinámicas para churn. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{bronze_labels} & \RaggedRight\arraybackslash 32.121.558 & \RaggedRight\arraybackslash \nolinkurl{churn_date}, \nolinkurl{customer_id}, \nolinkurl{label_available_date}, \nolinkurl{year_month}, \nolinkurl{_rescued_data}, \nolinkurl{ingestion_timestamp}, \nolinkurl{source_file} & \RaggedRight\arraybackslash Etiquetas mensuales de churn disponibles al cierre de cada mes. Permiten construir la variable objetivo sin mezclarla con el maestro de clientes. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{bronze_interactions} & \RaggedRight\arraybackslash 17.021.772 & \RaggedRight\arraybackslash \nolinkurl{agent_id}, \nolinkurl{channel}, \nolinkurl{customer_id}, \nolinkurl{duration_seconds}, \nolinkurl{interaction_type}, \nolinkurl{resolution}, \nolinkurl{satisfaction_score}, \nolinkurl{timestamp}, \nolinkurl{_rescued_data}, \nolinkurl{ingestion_timestamp}, \nolinkurl{source_file} & \RaggedRight\arraybackslash Eventos de relación con el cliente: llamadas, chats, visitas, reclamaciones, soporte técnico y señales comerciales. \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+La columna \nolinkurl{_rescued_data} aparece en las tablas JSON gestionadas por Auto Loader y permite conservar campos inesperados sin romper la ejecución. Esta columna es útil en escenarios reales porque un proveedor puede añadir un campo nuevo o cambiar parcialmente el esquema; si el pipeline falla ante cualquier variación menor, la operación se vuelve frágil. En todas las salidas se añaden \nolinkurl{ingestion_timestamp} y \nolinkurl{source_file} para auditar cuándo y desde qué fichero se incorporó cada registro.\par
+
+\subsubsection{Capa silver: calidad, historial y entidades limpias}
+
+La capa silver se implementa en \nolinkurl{codigo/src/medallion_pipeline/transformations/02_silver_transformation.py} con reglas centralizadas en \nolinkurl{codigo/src/medallion_pipeline/rules/customers.py}. Su función es separar registros válidos y no válidos, normalizar tipos temporales y construir entidades coherentes para explotación analítica. En esta capa se aplica la idea de cuarentena o DLQ (dead letter queue): un registro defectuoso no se elimina sin explicación, sino que se aparta para inspección y se evita que contamine las agregaciones posteriores.\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Tabla materializada & \RaggedRight\arraybackslash Filas & \RaggedRight\arraybackslash Columnas generadas & \RaggedRight\arraybackslash Contenido \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{silver_customers_history} & \RaggedRight\arraybackslash 3.050.000 & \RaggedRight\arraybackslash \nolinkurl{customer_id}, \nolinkurl{customer_updated_at}, \nolinkurl{age}, \nolinkurl{gender}, \nolinkurl{contract_type}, \nolinkurl{region}, \nolinkurl{region_type}, \nolinkurl{tariff_plan}, \nolinkurl{monthly_fee}, \nolinkurl{num_lines}, \nolinkurl{device_type}, \nolinkurl{acquisition_channel}, \nolinkurl{payment_method}, \nolinkurl{signup_date}, \nolinkurl{has_tv_bundle}, \nolinkurl{has_fiber}, \nolinkurl{has_roaming}, \nolinkurl{paperless_billing}, \nolinkurl{autopay}, \nolinkurl{nps_score_at_start}, \nolinkurl{is_active}, \nolinkurl{__START_AT}, \nolinkurl{__END_AT} & \RaggedRight\arraybackslash Historial SCD2 del maestro de clientes mediante AUTO CDC. En Hito 2 hay una versión por cliente porque se parte de una única fotografía de contexto. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{silver_churn_events} & \RaggedRight\arraybackslash 32.121.558 & \RaggedRight\arraybackslash \nolinkurl{bill_amount}, \nolinkurl{bill_overage}, \nolinkurl{call_minutes}, \nolinkurl{coverage_score}, \nolinkurl{customer_id}, \nolinkurl{data_consumed_gb}, \nolinkurl{days_active}, \nolinkurl{days_payment_late}, \nolinkurl{nps_score}, \nolinkurl{roaming_gb}, \nolinkurl{sms_count}, \nolinkurl{speed_mbps}, \nolinkurl{tariff_plan}, \nolinkurl{year_month}, \nolinkurl{_rescued_data}, \nolinkurl{ingestion_timestamp}, \nolinkurl{source_file}, \nolinkurl{usage_event_time}, \nolinkurl{churn_date}, \nolinkurl{label_available_date} & \RaggedRight\arraybackslash Eventos de uso limpios enriquecidos con la etiqueta mensual de churn. Mantiene una fila por cliente y mes, por eso conserva la cardinalidad de \nolinkurl{bronze_usage}. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{silver_interactions_clean} & \RaggedRight\arraybackslash 17.021.772 & \RaggedRight\arraybackslash \nolinkurl{agent_id}, \nolinkurl{channel}, \nolinkurl{customer_id}, \nolinkurl{duration_seconds}, \nolinkurl{interaction_type}, \nolinkurl{resolution}, \nolinkurl{satisfaction_score}, \nolinkurl{timestamp}, \nolinkurl{_rescued_data}, \nolinkurl{ingestion_timestamp}, \nolinkurl{source_file} & \RaggedRight\arraybackslash Interacciones válidas con \nolinkurl{timestamp} convertido a tipo temporal y dominio de \nolinkurl{interaction_type} validado. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{silver_quarantine_customers} & \RaggedRight\arraybackslash 0 & \RaggedRight\arraybackslash Columnas de \nolinkurl{bronze_customers} más \nolinkurl{customer_sequence_at} & \RaggedRight\arraybackslash Registros de clientes que no superan las reglas de identificador, edad, contrato o tarifa. En la carga de Hito 2 no se generaron incumplimientos. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{silver_quarantine_usage} & \RaggedRight\arraybackslash 0 & \RaggedRight\arraybackslash Mismas columnas que \nolinkurl{bronze_usage} & \RaggedRight\arraybackslash Registros de uso con identificador, periodo o métricas numéricas inválidas. La tabla queda creada aunque no haya registros rechazados. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{silver_quarantine_labels} & \RaggedRight\arraybackslash 0 & \RaggedRight\arraybackslash \nolinkurl{churn_date}, \nolinkurl{customer_id}, \nolinkurl{label_available_date}, \nolinkurl{year_month}, \nolinkurl{_rescued_data}, \nolinkurl{ingestion_timestamp}, \nolinkurl{source_file} & \RaggedRight\arraybackslash Etiquetas sin cliente o sin periodo válido. En la carga histórica no se detectaron casos. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{silver_quarantine_interactions} & \RaggedRight\arraybackslash 0 & \RaggedRight\arraybackslash Mismas columnas que \nolinkurl{silver_interactions_clean} & \RaggedRight\arraybackslash Interacciones sin cliente, sin timestamp o con tipo de interacción fuera del dominio controlado. \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+El uso de tablas de cuarentena evita descartar silenciosamente datos defectuosos y, al mismo tiempo, impide que registros inválidos contaminen la capa gold. Que las cuarentenas tengan cero filas en esta ejecución no significa que el mecanismo no exista; significa que el generador entregó datos compatibles con las reglas definidas para Hito 2. Esta diferencia es importante documentalmente: una capa de calidad no se valida solo por rechazar datos, sino por dejar explícito qué reglas se comprueban y dónde aparecerían los rechazos si una fuente empezase a enviar valores fuera de dominio.\par
+
+\subsubsection{Capa gold: base de modelado y características}
+
+La capa gold se reparte en tres scripts, igual que en el proyecto de referencia del profesor, donde la capa final se separa en spine, perfil y variables derivadas. En nuestro caso se mantiene la misma idea, pero adaptada al problema de churn telco:\par
+
+\begin{itemize}
+\item \nolinkurl{03_gold_churn_spine.py} genera \nolinkurl{gold_churn_spine}.
+\item \nolinkurl{03_gold_customer_profile.py} genera \nolinkurl{gold_customer_profile}.
+\item \nolinkurl{03_gold_customer_aggregations.py} genera \nolinkurl{gold_customer_aggregations}.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Tabla materializada & \RaggedRight\arraybackslash Filas & \RaggedRight\arraybackslash Columnas generadas & \RaggedRight\arraybackslash Contenido \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{gold_churn_spine} & \RaggedRight\arraybackslash 32.121.558 & \RaggedRight\arraybackslash \nolinkurl{customer_id}, \nolinkurl{year_month}, \nolinkurl{usage_event_time}, \nolinkurl{label_available_date}, \nolinkurl{churn_date}, \nolinkurl{label_will_churn}, \nolinkurl{roaming_gb}, \nolinkurl{sms_count}, \nolinkurl{bill_overage}, \nolinkurl{speed_mbps}, \nolinkurl{days_active} & \RaggedRight\arraybackslash Tabla ancla para modelado supervisado. Contiene la clave cliente-mes, la fecha de disponibilidad de etiqueta, la variable objetivo binaria y señales de uso disponibles en el evento. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{gold_customer_profile} & \RaggedRight\arraybackslash 3.050.000 & \RaggedRight\arraybackslash \nolinkurl{customer_id}, \nolinkurl{age}, \nolinkurl{gender}, \nolinkurl{contract_type}, \nolinkurl{region}, \nolinkurl{region_type}, \nolinkurl{tariff_plan}, \nolinkurl{monthly_fee}, \nolinkurl{num_lines}, \nolinkurl{device_type}, \nolinkurl{acquisition_channel}, \nolinkurl{payment_method}, \nolinkurl{signup_date}, \nolinkurl{has_tv_bundle}, \nolinkurl{has_fiber}, \nolinkurl{has_roaming}, \nolinkurl{paperless_billing}, \nolinkurl{autopay}, \nolinkurl{nps_score_at_start}, \nolinkurl{is_active}, \nolinkurl{__START_AT}, \nolinkurl{__END_AT}, \nolinkurl{age_group}, \nolinkurl{contract_risk_group} & \RaggedRight\arraybackslash Perfil estable del cliente con atributos demográficos, contractuales y dos derivadas simples para segmentación: grupo de edad y grupo de riesgo contractual. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{gold_customer_aggregations} & \RaggedRight\arraybackslash 32.121.558 & \RaggedRight\arraybackslash \nolinkurl{customer_id}, \nolinkurl{year_month}, \nolinkurl{window_end}, \nolinkurl{label_available_date}, \nolinkurl{label_will_churn}, \nolinkurl{data_consumed_gb}, \nolinkurl{call_minutes}, \nolinkurl{bill_amount}, \nolinkurl{days_payment_late}, \nolinkurl{nps_score}, \nolinkurl{coverage_score}, \nolinkurl{bill_vs_data_ratio} & \RaggedRight\arraybackslash Features mensuales por cliente. Conserva métricas de uso, facturación, satisfacción y cobertura, y añade el ratio \nolinkurl{bill_vs_data_ratio} para aproximar coste relativo por consumo. \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Las tablas \nolinkurl{gold_customer_profile} y \nolinkurl{gold_customer_aggregations} se declaran con propiedades compatibles con Change Data Feed y claves temporales, de forma que puedan registrarse posteriormente como tablas de características en Unity Catalog y publicarse en Online Feature Store cuando el entorno académico permita Lakebase. Change Data Feed permite leer qué filas han cambiado entre versiones Delta, lo que es útil para refrescos incrementales y para no recalcular siempre tablas completas. En Hito 2 esta parte queda preparada a nivel de contrato de datos; el entrenamiento y la selección final de variables se abordan en Hito 3.\par
+
+\subsection{Control de calidad - Capa Silver}
+
+\subsubsection{Centralización de reglas}
+
+Las reglas de calidad se centralizan en \nolinkurl{codigo/src/medallion_pipeline/rules/customers.py} para evitar lógica duplicada y facilitar la revisión funcional. Esta centralización simplifica el mantenimiento: cuando una regla cambia, la actualización se realiza en un único punto y se propaga automáticamente al flujo completo. Cada regla es una expresión SQL que debe evaluar a \nolinkurl{TRUE} para que un registro se considere válido; los registros que no la superan son marcados con el flag \nolinkurl{is_quarantined} en lugar de descartados, preservando trazabilidad.\par
+
+\bigskip\hrule\bigskip
+
+\subsubsection{Reglas por entidad}
+
+\paragraph{Clientes (\nolinkurl{get_customer_rules})}
+
+La entidad de clientes es el eje central del modelo de churn. Sus reglas buscan garantizar que cada registro represente a un cliente real e identificable, con datos de contrato y facturación coherentes.\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.313\textwidth}|p{0.313\textwidth}|p{0.313\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Regla & \RaggedRight\arraybackslash Expresión SQL & \RaggedRight\arraybackslash Justificación \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_customer_id} & \RaggedRight\arraybackslash \nolinkurl{customer_id IS NOT NULL} & \RaggedRight\arraybackslash Sin identificador no es posible vincular el registro con ninguna otra entidad del modelo. Es la clave de integridad referencial del sistema. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_age} & \RaggedRight\arraybackslash \nolinkurl{age > 0 AND age < 120} & \RaggedRight\arraybackslash Filtra edades biológicamente imposibles originadas por errores de ingesta o valores por defecto. El rango 1–119 cubre la totalidad de clientes reales posibles. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_contract_type} & \RaggedRight\arraybackslash \nolinkurl{contract_type IN ('monthly', 'annual')} & \RaggedRight\arraybackslash El tipo de contrato determina la lógica de cálculo de churn. Valores fuera del dominio conocido indicarían un error de codificación upstream que podría distorsionar los modelos. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_monthly_fee} & \RaggedRight\arraybackslash \nolinkurl{monthly_fee >= 0} & \RaggedRight\arraybackslash Una tarifa negativa es económicamente incoherente y señala un error de transformación. Se permite el valor cero para cubrir planes gratuitos o promociónales. \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\bigskip\hrule\bigskip
+
+\paragraph{Uso (\nolinkurl{get_usage_rules})}
+
+Los registros de uso son la principal fuente de señal de comportamiento del cliente. La calidad en esta entidad es crítica porque sus valores alimentan directamente las features del modelo predictivo.\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.313\textwidth}|p{0.313\textwidth}|p{0.313\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Regla & \RaggedRight\arraybackslash Expresión SQL & \RaggedRight\arraybackslash Justificación \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_customer_id} & \RaggedRight\arraybackslash \nolinkurl{customer_id IS NOT NULL} & \RaggedRight\arraybackslash Necesario para asociar el consumo a un cliente concreto. Sin él el registro es inutilizable para el análisis. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_year_month} & \RaggedRight\arraybackslash \nolinkurl{year_month IS NOT NULL} & \RaggedRight\arraybackslash El período de referencia es imprescindible para la agregación mensual y la construcción de la ventana temporal del modelo. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_data_consumed} & \RaggedRight\arraybackslash \nolinkurl{data_consumed_gb >= 0} & \RaggedRight\arraybackslash El consumo de datos no puede ser negativo. Valores negativos apuntan a errores de medición o reversiones mal registradas. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_call_minutes} & \RaggedRight\arraybackslash \nolinkurl{call_minutes >= 0} & \RaggedRight\arraybackslash Análogamente, los minutos de llamada son una magnitud no negativa. Un valor negativo indicaría un error en el sistema de medición. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_bill_amount} & \RaggedRight\arraybackslash \nolinkurl{bill_amount >= 0} & \RaggedRight\arraybackslash El importe facturado debe ser cero o positivo. Importes negativos pueden deberse a abonos incorrectamente clasificados que contaminarían los ratios de facturación. \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\bigskip\hrule\bigskip
+
+\paragraph{Etiquetas (\nolinkurl{get_label_rules})}
+
+Las etiquetas representan la variable objetivo del modelo de churn. Su integridad es especialmente sensible: un error aquí no degrada la calidad del dato sino directamente la del entrenamiento.\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.313\textwidth}|p{0.313\textwidth}|p{0.313\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Regla & \RaggedRight\arraybackslash Expresión SQL & \RaggedRight\arraybackslash Justificación \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_customer_id} & \RaggedRight\arraybackslash \nolinkurl{customer_id IS NOT NULL} & \RaggedRight\arraybackslash Una etiqueta sin cliente asociado no puede incorporarse al dataset de entrenamiento ni de evaluación. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_year_month} & \RaggedRight\arraybackslash \nolinkurl{year_month IS NOT NULL} & \RaggedRight\arraybackslash La etiqueta de churn es inherentemente temporal. Sin período de referencia no es posible alinearla con las features del mes correspondiente. \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\bigskip\hrule\bigskip
+
+\paragraph{Interacciones (\nolinkurl{get_interaction_rules})}
+
+Los eventos de interacción enriquecen el perfil del cliente con señales de comportamiento cualitativo. La validación se centra en la coherencia del tipo de interacción, ya que determina cómo se agregan y ponderan los eventos en la capa gold.\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.313\textwidth}|p{0.313\textwidth}|p{0.313\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Regla & \RaggedRight\arraybackslash Expresión SQL & \RaggedRight\arraybackslash Justificación \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_customer_id} & \RaggedRight\arraybackslash \nolinkurl{customer_id IS NOT NULL} & \RaggedRight\arraybackslash Sin cliente identificado la interacción no puede vincularse al historial correspondiente. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_timestamp} & \RaggedRight\arraybackslash \nolinkurl{timestamp IS NOT NULL} & \RaggedRight\arraybackslash La ordenación temporal de las interacciones es necesaria para construir features de recencia y frecuencia. Sin timestamp el evento pierde su dimensión temporal. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{valid_interaction_type} & \RaggedRight\arraybackslash \nolinkurl{interaction_type IN (...)} & \RaggedRight\arraybackslash El tipo de interacción está codificado en un dominio cerrado de 13 valores. Cualquier valor fuera de este dominio indica un error de integración upstream y podría introducir categorías espurias en el modelo. \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\bigskip\hrule\bigskip
+
+\subsection{Robustez y resolución de incidencias}
+
+La robustez del Hito 2 no se plantea como una lista de errores internos de desarrollo, sino como un conjunto de decisiones concretas de ingeniería y operación que hacen reproducible el pipeline:\par
+
+\begin{itemize}
+\item Separación estricta entre código versionable y datos generados. Las salidas masivas del generador y sus logs se excluyen del bundle para que \nolinkurl{validate} y \nolinkurl{deploy} no intenten sincronizar artefactos pesados.
+\item Imports robustos para ejecución en Databricks. Las reglas de calidad viven en \nolinkurl{src/medallion_pipeline/rules/} y se cargan desde el \nolinkurl{bundle.sourcePath} inyectado por el pipeline, manteniendo la separación entre reglas y transformaciones.
+\item Capa silver con cuarentena explícita. Cada entidad tiene un flujo de evaluación y una tabla de cuarentena, lo que permite que el pipeline siga siendo trazable aunque en futuras cargas aparezcan registros inválidos.
+\item Enriquecimiento de eventos con patrón stream-static. Para Hito 2 se mantiene \nolinkurl{bronze_usage} como flujo incremental y se cruza con una vista estática de etiquetas mensuales válidas. Esta decisión es suficiente para una carga histórica mensual y reduce complejidad operativa frente a un join stream-stream completo.
+\item Ejecución en modo triggered. El pipeline no queda ejecutándose de forma continua; se lanza bajo demanda o desde el job, procesa el lote disponible y libera recursos. Esto encaja con la entrega académica y con la generación mensual de datos.
+\end{itemize}
+
+Con estos ajustes, la evidencia relevante es el resultado final: actualización completa en estado \nolinkurl{COMPLETED}, tablas materializadas por capa y contrato de datos preparado para modelado.\par
+
+\subsection{Orquestación final del hito}
+
+Con la capa de datos estabilizada, cerramos el hito incorporando un job final de orquestación, equivalente en estructura al del proyecto de referencia:\par
+
+\begin{itemize}
+\item Job: \nolinkurl{Telco Churn - Hito 2 Orchestration}
+\item Secuencia:
+\end{itemize}
+1. Ejecución de pipeline Medallion\par
+2. Ejecución del notebook \nolinkurl{codigo/notebooks/04_Feature_Store_Registration.py}\par
+
+El notebook final se incorporó en \nolinkurl{codigo/notebooks} y se adaptó para ejecución en modo simulación de Feature Store, ya que Free Edition no permite desplegar Lakebase/Online Feature Store. Aun así, el notebook valida la existencia de tablas gold, registra trazas de ejecución y conserva comentado el bloque de código real para activar en cuanto haya licencia.\par
+
+También se configuraron notificaciones de éxito y error en el propio job para ambos integrantes del equipo, de forma que la ejecución quede monitorizada sin necesidad de revisar manualmente la UI en cada corrida.\par
+
+\subsection{Decisiones de limpieza y gobierno del entorno}
+
+Como parte del cierre del hito se realizó limpieza de recursos antiguos para evitar duplicidades y confusión operativa. Se eliminaron volumen y objetos del esquema previo ya en desuso, manteniendo únicamente los recursos oficiales del proyecto en \nolinkurl{workspace.telco_churn}.\par
+
+Esta parte, aunque no cambia el resultado analítico, sí mejora la mantenibilidad del entorno: reduce riesgo de ejecutar sobre tablas antiguas y simplifica la explicación del proyecto durante defensa.\par
+
+\subsection{Estado de cierre del Hito 2}
+
+El cierre técnico queda validado con:\par
+
+\begin{itemize}
+\item Pipeline en estado \nolinkurl{COMPLETED} (update final validada: \nolinkurl{aae8711c-6d5f-4502-b237-41f6b738c0e6})
+\item Job de orquestación ejecutado en \nolinkurl{SUCCESS} (\nolinkurl{run_id}: \nolinkurl{640253146512278})
+\item Tablas medallion materializadas en \nolinkurl{workspace.telco_churn}
+\item Recursos antiguos del esquema previo limpiados para evitar ambigüedad operativa
+\end{itemize}
+
+El DAG resultante refleja la linaje completa del pipeline, desde la ingesta en bronze hasta las tablas gold, con todas las tablas en estado \nolinkurl{COMPLETED} y los flujos de cuarentena activos por entidad.\par
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth,height=0.72\textheight,keepaspectratio]{assets/hito2_pipeline_medallion_dag.png}
+\caption{Pipeline Medallion de Hito 2 en Databricks}
+\end{figure}
+
+Figura 1. Pipeline Medallion desplegado en Databricks para Hito 2. La captura muestra el grafo de tablas bronze, silver y gold, junto con el estado correcto de la actualización.\par
+
+En términos académicos y técnicos, el objetivo del hito se considera cumplido: no solo existe código, sino una solución desplegada, ejecutada y trazable, con documentación reproducible tanto por CLI como por UI. Por tanto, Hito 2 queda cerrado con una base de datos estable y gobernada para iniciar Hito 3 sin rehacer ingeniería de datos.\par
+
+\section{Hito 3: Modelado y experimentación}
+
+\subsection{Objetivo del hito}
+
+El tercer hito convierte la base de datos gobernada del Hito 2 en un ciclo de modelado reproducible para predicción de churn. El objetivo no es únicamente entrenar un clasificador, sino dejar trazado el proceso completo: generación del dataset de entrenamiento con garantías temporales, experimentación con MLflow, registro del mejor candidato en Unity Catalog y evaluación champion-challenger antes de aceptar o rechazar un modelo.\par
+
+La guía oficial separa esta fase del pipeline declarativo Medallion. Por tanto, el código de datos sigue viviendo en \nolinkurl{src/medallion_pipeline/transformations/} y el modelado se ejecuta como un flujo independiente orquestado mediante un Job de Databricks. No se ha añadido la lógica de ML a \nolinkurl{resources/telco_churn.pipeline.yml} porque ese recurso define el pipeline de datos; forzar ahí el entrenamiento rompería la separación recomendada entre ingeniería de datos y MLOps.\par
+
+\subsection{Componentes implementados}
+
+La fase de modelado se ha diseñado alrededor de cuatro decisiones específicas del caso de churn telco. La primera es que la unidad de predicción sea el par cliente-mes, no el cliente aislado: cada fila representa el estado observable de un cliente en un mes concreto y permite decidir si debe entrar o no en una campaña de retención. La segunda es que todas las variables se calculen con clave temporal (\nolinkurl{usage_event_time}), de forma que el entrenamiento reproduce la información que habría estado disponible en una ejecución real.\par
+
+La tercera decisión es usar un modelo distribuido de Spark MLlib empaquetado como pipeline completo. Esto evita entrenar el preprocesado por separado y reduce el riesgo de diferencias entre entrenamiento, validación, prueba e inferencia. En términos de MLOps, ese riesgo se conoce como \nolinkurl{training-serving skew}: el modelo parece correcto durante entrenamiento, pero en producción recibe variables calculadas de otra forma o con otro esquema. La cuarta decisión es gobernar el resultado con MLflow y Unity Catalog: cada ciclo deja trazados datos, parámetros, métricas, artefactos y aliases (\nolinkurl{candidate}, \nolinkurl{challenger}, \nolinkurl{champion} o \nolinkurl{rejected}) para que el modelo aceptado pueda auditarse.\par
+
+Operativamente, estas decisiones se orquestan en un job de Databricks con tres pasos: regenerar el dataset supervisado desde las tablas gold, ejecutar la búsqueda de hiperparámetros y aplicar el ciclo de promoción. Lo relevante es que el flujo completo es repetible y mantiene separada la fase de datos del pipeline Medallion del Hito 2.\par
+
+\subsection{Generación del dataset de entrenamiento}
+
+El dataset de entrenamiento se construye desde la tabla spine \nolinkurl{workspace.telco_churn.gold_churn_spine} y se enriquece con las tablas \nolinkurl{gold_customer_profile} y \nolinkurl{gold_customer_aggregations}. La unión usa claves temporales para que las características correspondan al estado disponible en el momento de predicción (\nolinkurl{usage_event_time}), evitando fuga de información futura. Esta lógica es el point-in-time join: para cada cliente y mes no se toma "el último dato disponible hoy", sino el dato que habría sido visible en aquella fecha. Sin esta precaución, el modelo podría aprender señales posteriores a la baja y las métricas quedarían artificialmente infladas.\par
+
+Las columnas \nolinkurl{churn_date} y \nolinkurl{label_available_date} se excluyen del dataset materializado porque no estarían disponibles como señales reales de inferencia. La tabla resultante se guarda como Delta estática en \nolinkurl{workspace.telco_churn.gold_churn_training_dataset}, con propiedades de trazabilidad:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Propiedad & \RaggedRight\arraybackslash Valor validado \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{ml.delta_semantic_version} & \RaggedRight\arraybackslash \nolinkurl{0} \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{ml.delta_physical_version} & \RaggedRight\arraybackslash \nolinkurl{12} \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{ml.data_max_date} & \RaggedRight\arraybackslash \nolinkurl{2024-12-01} \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{ml.data_previous_max_date} & \RaggedRight\arraybackslash vacío en el primer ciclo \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{ml.num_rows} & \RaggedRight\arraybackslash \nolinkurl{16.316.445} \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{ml.num_features} & \RaggedRight\arraybackslash \nolinkurl{33} \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+La comprobación de calidad confirma que el dataset contiene \nolinkurl{16.316.445} filas, \nolinkurl{2.042.162} clientes distintos y ventana temporal de \nolinkurl{2023-07-01} a \nolinkurl{2024-12-01}. No se detectaron nulos en las columnas materializadas. El balance global es de \nolinkurl{788.672} filas con churn (\nolinkurl{4,83%}) y \nolinkurl{15.527.773} sin churn (\nolinkurl{95,17%}), por lo que el problema queda desbalanceado y justifica el uso de pesos inversos de frecuencia en el clasificador.\par
+
+La partición temporal validada fue:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.134\textwidth}|p{0.134\textwidth}|p{0.134\textwidth}|p{0.134\textwidth}|p{0.134\textwidth}|p{0.134\textwidth}|p{0.134\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Split & \RaggedRight\arraybackslash Periodo & \RaggedRight\arraybackslash Filas & \RaggedRight\arraybackslash \% del dataset & \RaggedRight\arraybackslash Churn & \RaggedRight\arraybackslash No churn & \RaggedRight\arraybackslash \% churn \\
+\hline
+\RaggedRight\arraybackslash Entrenamiento & \RaggedRight\arraybackslash 2023-07-01 a 2024-06-30 & \RaggedRight\arraybackslash 9.900.403 & \RaggedRight\arraybackslash 60,68\% & \RaggedRight\arraybackslash 508.454 & \RaggedRight\arraybackslash 9.391.949 & \RaggedRight\arraybackslash 5,14\% \\
+\hline
+\RaggedRight\arraybackslash Validación & \RaggedRight\arraybackslash 2024-07-01 a 2024-09-30 & \RaggedRight\arraybackslash 3.262.300 & \RaggedRight\arraybackslash 19,99\% & \RaggedRight\arraybackslash 144.869 & \RaggedRight\arraybackslash 3.117.431 & \RaggedRight\arraybackslash 4,44\% \\
+\hline
+\RaggedRight\arraybackslash Prueba & \RaggedRight\arraybackslash 2024-10-01 a 2024-12-01 & \RaggedRight\arraybackslash 3.153.742 & \RaggedRight\arraybackslash 19,33\% & \RaggedRight\arraybackslash 135.349 & \RaggedRight\arraybackslash 3.018.393 & \RaggedRight\arraybackslash 4,29\% \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+La distribución deja aproximadamente un 60\% de observaciones para ajustar el modelo y dos bloques cercanos al 20\% para validación y prueba. Esta proporción es adecuada para el tamaño del dataset: el entrenamiento conserva volumen suficiente para aprender patrones generales, mientras que validación y prueba mantienen millones de observaciones y una cantidad suficiente de casos positivos para estimar AUC-PR y F1 con estabilidad.\par
+
+\subsection{Arquitectura del pipeline de modelado}
+
+El modelo se empaqueta como un único \nolinkurl{Pipeline} de Spark MLlib para que el preprocesado aprendido durante entrenamiento se aplique de forma idéntica en validación, prueba y producción. Esta decisión evita divergencias entre entrenamiento e inferencia.\par
+
+Las etapas principales son:\par
+
+1. Imputación con mediana para variables numéricas.\par
+2. Conversión de indicadores booleanos/binarios.\par
+3. Ingeniería de variables derivadas disponibles en inferencia, como \nolinkurl{tenure_months}, \nolinkurl{is_high_bill}, \nolinkurl{is_late_payer}, \nolinkurl{low_nps_flag} y \nolinkurl{bill_vs_data_ratio}.\par
+4. Indexación de categóricas con \nolinkurl{StringIndexer}.\par
+5. Codificación \nolinkurl{OneHotEncoder}.\par
+6. Ensamblado en vector de características.\par
+7. Selección por varianza con \nolinkurl{VarianceThresholdSelector}.\par
+8. Escalado estándar.\par
+9. Clasificación con \nolinkurl{LogisticRegression}.\par
+
+Se eligió regresión logística porque ofrece una primera línea base robusta, interpretable y razonable para el volumen de datos disponible. En un proyecto de retención, la explicabilidad del modelo es relevante: no basta con maximizar métricas, también conviene entender qué señales elevan el riesgo de fuga para poder diseñar acciones comerciales.\par
+
+\subsection{Experimentación con MLflow}
+
+La experimentación se ejecutó como búsqueda completa sobre ocho configuraciones. En MLflow se registraron métricas tanto en entrenamiento como en validación para revisar rendimiento y posible sobreajuste:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.094\textwidth}|p{0.094\textwidth}|p{0.094\textwidth}|p{0.094\textwidth}|p{0.094\textwidth}|p{0.094\textwidth}|p{0.094\textwidth}|p{0.094\textwidth}|p{0.094\textwidth}|p{0.094\textwidth}|}
+\hline
+\RaggedRight\arraybackslash \nolinkurl{reg_param} & \RaggedRight\arraybackslash \nolinkurl{elastic_net_param} & \RaggedRight\arraybackslash \nolinkurl{max_iter} & \RaggedRight\arraybackslash AUC-PR train & \RaggedRight\arraybackslash AUC-ROC train & \RaggedRight\arraybackslash F1 train & \RaggedRight\arraybackslash AUC-PR validación & \RaggedRight\arraybackslash AUC-ROC validación & \RaggedRight\arraybackslash F1 validación & \RaggedRight\arraybackslash Umbral \\
+\hline
+\RaggedRight\arraybackslash 0.01 & \RaggedRight\arraybackslash 0.0 & \RaggedRight\arraybackslash 100 & \RaggedRight\arraybackslash 0.988688 & \RaggedRight\arraybackslash 0.998932 & \RaggedRight\arraybackslash 0.992246 & \RaggedRight\arraybackslash 0.988422 & \RaggedRight\arraybackslash 0.999053 & \RaggedRight\arraybackslash 0.993917 & \RaggedRight\arraybackslash 0.68 \\
+\hline
+\RaggedRight\arraybackslash 0.01 & \RaggedRight\arraybackslash 0.0 & \RaggedRight\arraybackslash 200 & \RaggedRight\arraybackslash 0.988688 & \RaggedRight\arraybackslash 0.998932 & \RaggedRight\arraybackslash 0.992246 & \RaggedRight\arraybackslash 0.988422 & \RaggedRight\arraybackslash 0.999053 & \RaggedRight\arraybackslash 0.993917 & \RaggedRight\arraybackslash 0.68 \\
+\hline
+\RaggedRight\arraybackslash 0.01 & \RaggedRight\arraybackslash 0.5 & \RaggedRight\arraybackslash 100 & \RaggedRight\arraybackslash 0.990224 & \RaggedRight\arraybackslash 0.999084 & \RaggedRight\arraybackslash 0.993554 & \RaggedRight\arraybackslash 0.990393 & \RaggedRight\arraybackslash 0.999233 & \RaggedRight\arraybackslash 0.995061 & \RaggedRight\arraybackslash 0.64 \\
+\hline
+\RaggedRight\arraybackslash 0.01 & \RaggedRight\arraybackslash 0.5 & \RaggedRight\arraybackslash 200 & \RaggedRight\arraybackslash 0.990225 & \RaggedRight\arraybackslash 0.999084 & \RaggedRight\arraybackslash 0.993554 & \RaggedRight\arraybackslash 0.990393 & \RaggedRight\arraybackslash 0.999233 & \RaggedRight\arraybackslash 0.995061 & \RaggedRight\arraybackslash 0.64 \\
+\hline
+\RaggedRight\arraybackslash 0.1 & \RaggedRight\arraybackslash 0.0 & \RaggedRight\arraybackslash 100 & \RaggedRight\arraybackslash 0.967972 & \RaggedRight\arraybackslash 0.996364 & \RaggedRight\arraybackslash 0.988957 & \RaggedRight\arraybackslash 0.966975 & \RaggedRight\arraybackslash 0.996650 & \RaggedRight\arraybackslash 0.990864 & \RaggedRight\arraybackslash 0.61 \\
+\hline
+\RaggedRight\arraybackslash 0.1 & \RaggedRight\arraybackslash 0.0 & \RaggedRight\arraybackslash 200 & \RaggedRight\arraybackslash 0.967972 & \RaggedRight\arraybackslash 0.996364 & \RaggedRight\arraybackslash 0.988957 & \RaggedRight\arraybackslash 0.966975 & \RaggedRight\arraybackslash 0.996650 & \RaggedRight\arraybackslash 0.990864 & \RaggedRight\arraybackslash 0.61 \\
+\hline
+\RaggedRight\arraybackslash 0.1 & \RaggedRight\arraybackslash 0.5 & \RaggedRight\arraybackslash 100 & \RaggedRight\arraybackslash 0.963315 & \RaggedRight\arraybackslash 0.993697 & \RaggedRight\arraybackslash 0.991321 & \RaggedRight\arraybackslash 0.964275 & \RaggedRight\arraybackslash 0.994287 & \RaggedRight\arraybackslash 0.992659 & \RaggedRight\arraybackslash 0.55 \\
+\hline
+\RaggedRight\arraybackslash 0.1 & \RaggedRight\arraybackslash 0.5 & \RaggedRight\arraybackslash 200 & \RaggedRight\arraybackslash 0.963315 & \RaggedRight\arraybackslash 0.993697 & \RaggedRight\arraybackslash 0.991321 & \RaggedRight\arraybackslash 0.964274 & \RaggedRight\arraybackslash 0.994287 & \RaggedRight\arraybackslash 0.992659 & \RaggedRight\arraybackslash 0.55 \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+La métrica primaria fue AUC-PR, más adecuada que accuracy o AUC-ROC cuando la clase positiva es minoritaria. En este proyecto el churn representa menos del 5\% del dataset de entrenamiento, de modo que una métrica como accuracy puede parecer alta aunque el modelo apenas detecte clientes que se van. AUC-PR resume la relación entre precisión y recall sobre la clase positiva, que es precisamente la que activa una posible campaña de retención. El mejor modelo fue la configuración \nolinkurl{reg_param = 0.01}, \nolinkurl{elastic_net_param = 0.5} y \nolinkurl{max_iter = 100}, con AUC-PR de validación \nolinkurl{0.990393}, AUC-ROC \nolinkurl{0.999233}, F1 \nolinkurl{0.995061}, precisión \nolinkurl{0.995162}, recall \nolinkurl{0.995007} y umbral óptimo \nolinkurl{0.64}.\par
+
+El resultado en entrenamiento de ese mismo modelo fue AUC-PR \nolinkurl{0.990224}, AUC-ROC \nolinkurl{0.999084} y F1 \nolinkurl{0.993554}. La diferencia de AUC-PR entre entrenamiento y validación fue prácticamente nula (\nolinkurl{-0,000168}), por lo que no observamos señales de sobreajuste relevante en esta primera línea base. El incremento de \nolinkurl{max_iter} de 100 a 200 no aportó mejora material, así que se mantuvo la configuración más simple.\par
+
+El experimento quedó registrado en MLflow en:\par
+
+\begin{itemize}
+\item Experimento: \nolinkurl{telco_churn_churn_detection_training}, creado en el espacio de usuario de Alonso
+\item Parent run: \nolinkurl{5cab64c09efe458e904e625678fa1cca}
+\item Mejor run: \nolinkurl{ec2ec49b626444f58f3b2db04ed44ee7}
+\item Modelo registrado: \nolinkurl{workspace.telco_churn.churn_lr_pipeline}
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth,height=0.72\textheight,keepaspectratio]{assets/hito3_mlflow_experiment_aucpr.png}
+\caption{Experimento MLflow de Hito 3}
+\end{figure}
+
+Figura 2. Experimento MLflow \nolinkurl{telco_churn_churn_detection_training}, con los runs de búsqueda de hiperparámetros y métricas de evaluación como AUC-PR, AUC-ROC y F1.\par
+
+\subsection{Registro en Unity Catalog y ciclo champion-challenger}
+
+El modelo se gobierna con aliases de Unity Catalog. El primer despliegue se trató como arranque en frío: no existía ningún \nolinkurl{champion} previo contra el que comparar, por lo que el mejor modelo de la búsqueda se promovió directamente tras evaluarse en el conjunto de prueba. En este contexto, \nolinkurl{champion} no significa simplemente "el último modelo entrenado", sino la versión aceptada para producción después de pasar la evaluación. Ese modelo reentrenado sobre el histórico completo quedó registrado como versión 2 y recibió el alias \nolinkurl{champion}.\par
+
+La versión 3 no corresponde a un intento de promoción antes de tener modelo desplegado, sino a una segunda ejecución posterior del ciclo completo, ya con la versión 2 actuando como \nolinkurl{champion}. En esa segunda ejecución, MLflow registró un nuevo mejor candidato con los mismos hiperparámetros, se movió temporalmente a \nolinkurl{challenger}, se evaluó sobre el mismo bloque de prueba y no superó estrictamente la métrica primaria del \nolinkurl{champion}. El papel de \nolinkurl{challenger} es competir contra el modelo en uso con una comparación simétrica, no reemplazarlo automáticamente por ser más reciente. Por ese motivo se retiró el alias \nolinkurl{challenger} y la versión quedó marcada como \nolinkurl{rejected}.\par
+
+El estado final validado es:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.313\textwidth}|p{0.313\textwidth}|p{0.313\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Alias & \RaggedRight\arraybackslash Versión & \RaggedRight\arraybackslash Significado \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{champion} & \RaggedRight\arraybackslash 2 & \RaggedRight\arraybackslash Modelo actualmente aceptado para producción \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{rejected} & \RaggedRight\arraybackslash 3 & \RaggedRight\arraybackslash Candidato evaluado que no mejora al champion \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth,height=0.72\textheight,keepaspectratio]{assets/hito3_unity_catalog_model_aliases.png}
+\caption{Modelo registrado en Unity Catalog con aliases}
+\end{figure}
+
+Figura 3. Modelo \nolinkurl{workspace.telco_churn.churn_lr_pipeline} registrado en Unity Catalog, con versiones gobernadas mediante aliases de producción.\par
+
+La evaluación de esa segunda ejecución (\nolinkurl{run_id}: \nolinkurl{499bacbcdfd647f8a6342901b3419888}) produjo:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.188\textwidth}|p{0.188\textwidth}|p{0.188\textwidth}|p{0.188\textwidth}|p{0.188\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Modelo & \RaggedRight\arraybackslash AUC-PR test & \RaggedRight\arraybackslash AUC-ROC test & \RaggedRight\arraybackslash F1 test & \RaggedRight\arraybackslash Decisión \\
+\hline
+\RaggedRight\arraybackslash Champion v2 & \RaggedRight\arraybackslash 0.990086 & \RaggedRight\arraybackslash 0.999231 & \RaggedRight\arraybackslash 0.996431 & \RaggedRight\arraybackslash Se mantiene \\
+\hline
+\RaggedRight\arraybackslash Challenger v3 & \RaggedRight\arraybackslash 0.990086 & \RaggedRight\arraybackslash 0.999231 & \RaggedRight\arraybackslash 0.996431 & \RaggedRight\arraybackslash Se rechaza por no mejorar estrictamente \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+La decisión es conservadora y coherente con un ciclo de producción: si un challenger empata al champion, no aporta valor operativo suficiente para cambiar el modelo aceptado. La tabla baseline para monitorización se generó en el primer ciclo de promoción del \nolinkurl{champion} y quedó materializada como \nolinkurl{workspace.telco_churn.gold_churn_test_baseline}, con \nolinkurl{3.153.742} filas y ventana \nolinkurl{2024-10-01} a \nolinkurl{2024-12-01}. Esta baseline actúa como referencia estable: no es un dataset cualquiera, sino el bloque temporal sobre el que se aceptó el modelo que después entra en producción.\par
+
+\subsection{Orquestación y evidencia de ejecución}
+
+El job completo de Hito 3 se desplegó mediante Databricks Asset Bundles y quedó disponible en Jobs \& Pipelines como:\par
+
+\begin{itemize}
+\item Job: \nolinkurl{[dev alonso_marcos] Telco Churn - Hito 3 ML Orchestration}
+\item Job ID: \nolinkurl{588950994995073}
+\item Run validado: \nolinkurl{329240873651157}
+\item Estado final: \nolinkurl{SUCCESS}
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth,height=0.72\textheight,keepaspectratio]{assets/hito3_job_ml_success.png}
+\caption{Job de ML de Hito 3 en SUCCESS}
+\end{figure}
+
+Figura 4. Run validado del job \nolinkurl{[dev alonso_marcos] Telco Churn - Hito 3 ML Orchestration}, con las tres tareas del flujo de modelado finalizadas correctamente.\par
+
+Las tareas finalizaron así:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.313\textwidth}|p{0.313\textwidth}|p{0.313\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Tarea & \RaggedRight\arraybackslash Estado & \RaggedRight\arraybackslash Duración aproximada \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{run_training_dataset_generation} & \RaggedRight\arraybackslash \nolinkurl{SUCCESS} & \RaggedRight\arraybackslash 229 s \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{run_mlflow_experimentation} & \RaggedRight\arraybackslash \nolinkurl{SUCCESS} & \RaggedRight\arraybackslash 7.390 s \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{run_production} & \RaggedRight\arraybackslash \nolinkurl{SUCCESS} & \RaggedRight\arraybackslash 770 s \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+También se ejecutó antes una prueba parcial de producción (\nolinkurl{run_id}: \nolinkurl{817389537042464}) para aislar el fallo reportado por Jose. Esa prueba permitió confirmar que el problema no era realmente que el modelo fuera demasiado grande, sino una combinación de registro MLflow en el sitio incorrecto, alias \nolinkurl{candidate} no idempotente tras reintentos y ruta de experimento con carpeta padre inexistente. Las correcciones aplicadas fueron:\par
+
+\begin{itemize}
+\item mover el registro del modelo al notebook orquestador de MLflow, donde existe el \nolinkurl{run_id} correcto;
+\item hacer que producción pueda continuar si un reintento encuentra el alias \nolinkurl{challenger} en vez de \nolinkurl{candidate};
+\item usar un experimento de usuario explícito y ya existente;
+\item corregir la tabla baseline de \nolinkurl{gold_fraud_test_baseline} a \nolinkurl{gold_churn_test_baseline};
+\item limpiar textos heredados del ejemplo de fraude para mantener coherencia con churn.
+\end{itemize}
+
+\subsection{Cierre del Hito 3}
+
+El Hito 3 queda cerrado con un ciclo de modelado reproducible y gobernado: existe dataset de entrenamiento versionado, búsqueda de hiperparámetros con MLflow, modelo registrado en Unity Catalog, aliases de producción coherentes, baseline de test y job end-to-end validado. El pipeline Medallion del Hito 2 permanece separado y no se modifica para ejecutar ML, porque la guía reserva esa fase a notebooks/jobs independientes.\par
+
+\section{Hito 4: Despliegue y monitorización}
+
+\subsection{Objetivo del hito}
+
+El cuarto hito convierte el sistema construido en los hitos anteriores en un flujo operativo: simula llegada continua de datos, actualiza el Lakehouse, ejecuta inferencia con el modelo champion, incorpora las etiquetas reales cuando están disponibles y deja monitorización y alertas sobre la tabla de predicciones enriquecidas.\par
+
+La guía del proyecto plantea esta fase como una extensión de producción del caso de referencia de fraude. En nuestro proyecto la unidad de decisión no es una transacción, sino el par cliente-mes. Por tanto, el equivalente a "nuevas transacciones" es la llegada progresiva de eventos mensuales de uso, interacciones y etiquetas de churn para clientes telco. La adaptación mantiene la arquitectura de referencia, pero cambia la semántica de negocio: buscamos detectar clientes con riesgo de baja y no operaciones fraudulentas.\par
+
+Conviene remarcar que este hito no consiste únicamente en "lanzar el modelo". El despliegue operativo incluye cuatro responsabilidades distintas: alimentar datos nuevos, puntuar clientes con una versión gobernada del modelo, esperar a que lleguen etiquetas reales y medir si el comportamiento observado sigue siendo aceptable. En un sistema de churn, estas fases no ocurren al mismo tiempo: la predicción se puede generar al cierre del mes, pero la confirmación de baja puede aparecer después. Por eso la tabla final de inferencia se diseña como una tabla viva, que primero almacena la predicción y más tarde se completa con la etiqueta real.\par
+
+\subsection{Simulación de llegada de datos}
+
+La simulación parte de los datos de 2025 que el generador del proyecto deja en la zona de producción simulada. En los hitos anteriores, el histórico estable de entrenamiento se había limitado principalmente a 2023-2024, mientras que 2025 se reservó para representar producción y drift. En Hito 4 se usa \nolinkurl{notebooks/10_Simulation.ipynb} para mover de forma incremental esos eventos hacia la zona histórica consumida por la ingesta. Al hablar de drift distinguimos dos fenómenos: \nolinkurl{data drift}, cuando cambia la distribución de las variables de entrada, y \nolinkurl{concept drift}, cuando cambia la relación entre esas variables y la baja del cliente. El generador introduce 2025 como periodo útil para observar ambos riesgos sin contaminar el entrenamiento inicial.\par
+
+El job de simulación está desplegado como:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Elemento & \RaggedRight\arraybackslash Valor \\
+\hline
+\RaggedRight\arraybackslash Job & \RaggedRight\arraybackslash \nolinkurl{[dev jose_barros1] Telco Churn - Simulation} \\
+\hline
+\RaggedRight\arraybackslash Job ID & \RaggedRight\arraybackslash \nolinkurl{539833387139842} \\
+\hline
+\RaggedRight\arraybackslash Frecuencia & \RaggedRight\arraybackslash Cada hora \\
+\hline
+\RaggedRight\arraybackslash Cron & \RaggedRight\arraybackslash \nolinkurl{0 0 * * * ?} en UTC \\
+\hline
+\RaggedRight\arraybackslash Función & \RaggedRight\arraybackslash Inyectar nuevas horas de datos desde la zona de producción simulada hacia la zona histórica de ingesta \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+La versión desplegada en el usuario de Alonso también queda visible tras el despliegue del bundle:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Elemento & \RaggedRight\arraybackslash Valor \\
+\hline
+\RaggedRight\arraybackslash Job & \RaggedRight\arraybackslash \nolinkurl{[dev alonso_marcos] Telco Churn - Simulation} \\
+\hline
+\RaggedRight\arraybackslash Job ID & \RaggedRight\arraybackslash \nolinkurl{134780552623506} \\
+\hline
+\RaggedRight\arraybackslash Run validado & \RaggedRight\arraybackslash \nolinkurl{1089331173774799} \\
+\hline
+\RaggedRight\arraybackslash Estado & \RaggedRight\arraybackslash \nolinkurl{SUCCESS} \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth,height=0.72\textheight,keepaspectratio]{assets/hito4_simulation_job_success.png}
+\caption{Job de simulación de Hito 4 en SUCCESS}
+\end{figure}
+
+Figura 5. Run del job de simulación de Hito 4, usado para inyectar datos de producción simulada de forma incremental.\par
+
+La simulación es importante porque separa dos conceptos que en un proyecto académico suelen mezclarse: el histórico usado para entrenar y la llegada posterior de datos que el sistema debe procesar sin rehacer manualmente todo el pipeline. Así podemos probar que la solución acepta datos nuevos y que las predicciones de producción se generan con el modelo ya gobernado en Unity Catalog.\par
+
+El diseño de la simulación también aporta evidencia técnica de trabajo real porque reproduce problemas habituales de producción. La libreta no copia todo 2025 de una vez, sino que busca el último \nolinkurl{timestamp} ya presente en \nolinkurl{events/interactions} y continúa desde ese punto. Esto permite reejecutarla sin duplicar la misma ventana temporal. Además, \nolinkurl{labels} y \nolinkurl{usage} no se procesan con Pandas, sino con Spark y deduplicación mediante \nolinkurl{left_anti join}, porque son entidades de mayor volumen. La decisión evita un cuello de botella local y mantiene el comportamiento distribuido que se espera en un proyecto Big Data.\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Control implementado & \RaggedRight\arraybackslash Motivo operativo \\
+\hline
+\RaggedRight\arraybackslash Cursor por máximo \nolinkurl{timestamp} ya inyectado & \RaggedRight\arraybackslash Permite continuar la simulación tras fallos o reintentos. \\
+\hline
+\RaggedRight\arraybackslash Escritura particionada por año y mes & \RaggedRight\arraybackslash Mantiene compatibilidad con la ingesta incremental por Auto Loader. \\
+\hline
+\RaggedRight\arraybackslash Deduplicación de \nolinkurl{labels} y \nolinkurl{usage} con \nolinkurl{left_anti join} & \RaggedRight\arraybackslash Evita que una repetición del job genere duplicados funcionales. \\
+\hline
+\RaggedRight\arraybackslash Parámetro \nolinkurl{hours_to_inject = 1} en el job horario & \RaggedRight\arraybackslash Simula llegada gradual de datos y no una carga artificial masiva. \\
+\hline
+\RaggedRight\arraybackslash Separación \nolinkurl{source_buffer} frente a \nolinkurl{events} & \RaggedRight\arraybackslash Mantiene una frontera clara entre producción simulada y zona consumida por bronze. \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Pipeline de inferencia y enriquecimiento de etiquetas}
+
+La inferencia batch se implementa en \nolinkurl{notebooks/09_Inference_And_Label_Enrichment.ipynb} y se apoya en funciones auxiliares de \nolinkurl{notebooks/09_Utils.py}. Se usa inferencia batch porque el proceso de retención no requiere responder en milisegundos a una interacción individual; basta con puntuar lotes de clientes y alimentar campañas periódicas. Esta decisión reduce coste y complejidad frente a un endpoint online, y es coherente con la unidad de decisión cliente-mes. El flujo toma como entrada la capa gold generada por el pipeline Medallion, recupera el modelo actualmente aceptado mediante el alias:\par
+
+\nolinkurl{models:/workspace.telco_churn.churn_lr_pipeline@champion}\par
+
+En el estado validado, el alias \nolinkurl{champion} apunta a la versión 2 del modelo. Para cada fila de producción se calculan:\par
+
+\begin{itemize}
+\item \nolinkurl{prob_churn}, probabilidad estimada de baja;
+\item \nolinkurl{prediction}, decisión binaria según el umbral del modelo;
+\item \nolinkurl{model_version}, versión exacta usada para inferencia;
+\item \nolinkurl{inference_timestamp}, instante de generación de la predicción.
+\end{itemize}
+
+El resultado se materializa en:\par
+
+\nolinkurl{workspace.telco_churn.gold_churn_inference_enriched}\par
+
+La tabla no se limita a guardar predicciones. También se enriquece con \nolinkurl{label_will_churn} cuando la etiqueta real llega a silver. Esto permite que Lakehouse Monitoring calcule métricas reales de rendimiento del modelo en producción, no solo volúmenes o distribuciones de features. La escritura se hace de forma incremental mediante merge sobre la clave de cliente y mes, evitando duplicar predicciones cuando se reejecuta el job.\par
+
+Un detalle relevante de Hito 4 es que la inferencia no debe depender de recalcular manualmente los cortes de entrenamiento, validación y test en cada ejecución. El notebook lee los metadatos del modelo champion y usa el final de la ventana de test asociada al despliegue para separar histórico ya evaluado y datos posteriores de producción. Esta decisión evita que un avance de la tabla de entrenamiento deje sin procesar filas de inferencia.\par
+
+\subsection{Separación training-serving e idempotencia}
+
+La separación entre training y serving se ha mantenido de forma explícita. El entrenamiento se ejecuta en el job semanal de ML, donde se generan datasets temporales, se comparan modelos y se actualizan aliases. La inferencia, en cambio, se ejecuta en el job diario de datos y solo consume el alias \nolinkurl{champion}. Esto reduce el riesgo de que un experimento intermedio afecte a producción: mientras una versión sea \nolinkurl{candidate} o \nolinkurl{challenger}, no es usada por el scoring operativo.\par
+
+Esta separación también evita mezclar dos ritmos de negocio distintos. El scoring de clientes puede ser diario o mensual, porque se necesita actuar comercialmente sobre clientes en riesgo. El reentrenamiento puede ser semanal, porque consume más cómputo y requiere comparación champion-challenger. Si se reentrenase en cada ejecución diaria, el coste subiría sin garantía de mejora y se perdería estabilidad para interpretar las métricas de monitorización.\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Riesgo de diseño & \RaggedRight\arraybackslash Mitigación aplicada \\
+\hline
+\RaggedRight\arraybackslash Usar en producción un modelo todavía no aprobado & \RaggedRight\arraybackslash La inferencia carga exclusivamente \nolinkurl{models:/workspace.telco_churn.churn_lr_pipeline@champion}. \\
+\hline
+\RaggedRight\arraybackslash Duplicar predicciones al reintentar el notebook & \RaggedRight\arraybackslash Se excluyen clientes ya puntuados con \nolinkurl{LEFT ANTI JOIN} y se inserta con \nolinkurl{MERGE}. \\
+\hline
+\RaggedRight\arraybackslash Perder trazabilidad entre predicción y modelo & \RaggedRight\arraybackslash Se persiste \nolinkurl{model_version} junto con cada fila inferida. \\
+\hline
+\RaggedRight\arraybackslash Introducir training-serving skew & \RaggedRight\arraybackslash Se reutilizan las mismas tablas gold de features y el mismo patrón de point-in-time lookup que en entrenamiento. \\
+\hline
+\RaggedRight\arraybackslash Calcular métricas antes de tener etiquetas reales & \RaggedRight\arraybackslash La tabla acepta \nolinkurl{label_will_churn} nulo al inicio y lo actualiza después mediante \nolinkurl{MERGE}. \\
+\hline
+\RaggedRight\arraybackslash Dejar sin puntuar datos nuevos por cambios en el dataset de entrenamiento & \RaggedRight\arraybackslash La frontera de producción se toma del \nolinkurl{test_end_date} guardado en el champion, no de un cálculo ad hoc. \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+La idempotencia es especialmente importante porque los jobs de Databricks pueden relanzarse tras fallos, timeouts o despliegues parciales. En este caso se aplica en tres niveles. Primero, la simulación evita reinyectar eventos ya copiados. Segundo, la inferencia evita insertar predicciones ya existentes. Tercero, el enriquecimiento de etiquetas solo actualiza filas que todavía no tenían \nolinkurl{label_will_churn}. La consecuencia práctica es que repetir una ejecución válida no cambia artificialmente los recuentos ni distorsiona las métricas del monitor.\par
+
+\subsection{Monitorización con Lakehouse Monitoring}
+
+La tabla \nolinkurl{gold_churn_inference_enriched} tiene configurado Lakehouse Monitoring. El monitor usa la tabla baseline \nolinkurl{workspace.telco_churn.gold_churn_test_baseline}, generada durante el despliegue del champion, como referencia para comparar la producción de 2025 contra el comportamiento esperado en test. Esta comparación no busca demostrar que producción sea idéntica al pasado, sino detectar cuándo las diferencias son suficientemente grandes como para revisar datos, modelo o umbral operativo.\par
+
+La configuración funcional del monitor queda así:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Elemento & \RaggedRight\arraybackslash Valor \\
+\hline
+\RaggedRight\arraybackslash Tabla monitorizada & \RaggedRight\arraybackslash \nolinkurl{workspace.telco_churn.gold_churn_inference_enriched} \\
+\hline
+\RaggedRight\arraybackslash Tipo de problema & \RaggedRight\arraybackslash Clasificación \\
+\hline
+\RaggedRight\arraybackslash Columna temporal & \RaggedRight\arraybackslash \nolinkurl{inference_timestamp} \\
+\hline
+\RaggedRight\arraybackslash Modelo & \RaggedRight\arraybackslash \nolinkurl{model_version} \\
+\hline
+\RaggedRight\arraybackslash Predicción & \RaggedRight\arraybackslash \nolinkurl{prediction} \\
+\hline
+\RaggedRight\arraybackslash Etiqueta real & \RaggedRight\arraybackslash \nolinkurl{label_will_churn} \\
+\hline
+\RaggedRight\arraybackslash Baseline & \RaggedRight\arraybackslash \nolinkurl{workspace.telco_churn.gold_churn_test_baseline} \\
+\hline
+\RaggedRight\arraybackslash Dashboard & \RaggedRight\arraybackslash \nolinkurl{gold_churn_inference_enriched Monitoring} \\
+\hline
+\RaggedRight\arraybackslash Dashboard analítico & \RaggedRight\arraybackslash \nolinkurl{Telco Churn Analytics Dashboard} \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+El monitor genera automáticamente las tablas:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Tabla & \RaggedRight\arraybackslash Uso \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{workspace.telco_churn.gold_churn_inference_enriched_profile_metrics} & \RaggedRight\arraybackslash Perfilado, completitud y métricas de clasificación \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{workspace.telco_churn.gold_churn_inference_enriched_drift_metrics} & \RaggedRight\arraybackslash Distancia entre distribuciones de producción y baseline \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Además del resultado global, se han definido cortes de seguimiento sobre variables operativas y segmentos de negocio. En la terminología de Databricks estos cortes aparecen como \nolinkurl{slices}: subconjuntos de la población sobre los que se recalculan métricas para no esconder degradaciones locales detrás de una media global. En la validación aparecen cortes como \nolinkurl{days_payment_late > 0}, \nolinkurl{contract_type = 'month-to-month'} y \nolinkurl{contract_risk_group = 'high'}. Para un caso telco estos cortes son más interpretables que métricas puramente técnicas, porque conectan la calidad del modelo con perfiles de riesgo, modalidad contractual y comportamiento de pago.\par
+
+La elección del baseline es una decisión crítica. No se usa el entrenamiento como referencia porque el entrenamiento contiene datos que el modelo ya ha visto durante el ajuste, ni se usa una muestra aleatoria mezclada porque rompería la validación temporal. La tabla \nolinkurl{gold_churn_test_baseline} procede del bloque de test del champion, que es la referencia más cercana a producción sin haber participado en la optimización de hiperparámetros. Por tanto, cuando el monitor compara 2025 contra esa tabla, la pregunta que responde es: "¿se parece la producción actual al último periodo sobre el que aceptamos el modelo?".\par
+
+Lakehouse Monitoring genera dos familias de métricas. Las métricas de perfilado describen completitud, valores nulos, distribución de columnas y rendimiento del modelo cuando hay etiqueta. Las métricas de drift comparan distribuciones de producción frente al baseline. Para variables categóricas o discretizadas se usa distancia de Jensen-Shannon, una medida acotada que permite cuantificar si dos distribuciones se han separado. En esta entrega no interpretamos el valor como una verdad absoluta, sino como una señal operativa: valores bajos indican estabilidad relativa y valores altos obligan a revisar si el cambio es explicable por negocio o por una rotura de datos.\par
+
+También se ha tenido cuidado con las columnas que no deben interpretarse como drift de negocio. Por ejemplo, \nolinkurl{year_month} cambia necesariamente porque producción corresponde a 2025 y el baseline a 2024. Una distancia alta en esa columna no implica que el modelo se haya degradado, sino que el tiempo ha avanzado. Por eso la interpretación se centra en variables de negocio como \nolinkurl{age_group}, \nolinkurl{tariff_plan}, \nolinkurl{contract_risk_group}, pago, uso y satisfacción.\par
+
+\subsection{Alertas operativas}
+
+Jose dejó configuradas cuatro alertas básicas sobre las tablas de monitorización. Todas están activas, usan el SQL Warehouse \nolinkurl{05f260dd2d70667b}, notifican a Alonso y Jose, y en la última evaluación consultada estaban en estado \nolinkurl{OK}.\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Alerta & \RaggedRight\arraybackslash ID & \RaggedRight\arraybackslash Condición & \RaggedRight\arraybackslash Estado \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{Alert ModelAcc_lt_085} & \RaggedRight\arraybackslash \nolinkurl{2869416215537797} & \RaggedRight\arraybackslash accuracy inferior al 85\% & \RaggedRight\arraybackslash \nolinkurl{OK} \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{Alert Drift_gt_005} & \RaggedRight\arraybackslash \nolinkurl{2869416215537799} & \RaggedRight\arraybackslash JS distance superior a 0,05 en variables monitorizadas & \RaggedRight\arraybackslash \nolinkurl{OK} \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{Alert Completeness_lt_095} & \RaggedRight\arraybackslash \nolinkurl{2869416215537800} & \RaggedRight\arraybackslash completitud inferior al 95\% & \RaggedRight\arraybackslash \nolinkurl{OK} \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{Alert zScore_gt_200} & \RaggedRight\arraybackslash \nolinkurl{2869416215537801} & \RaggedRight\arraybackslash desviación anómala de volumen por z-score & \RaggedRight\arraybackslash \nolinkurl{OK} \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Estas alertas cubren cuatro familias de fallo distintas: degradación de calidad del modelo, drift de datos, roturas de esquema o nulos inesperados y cambios bruscos de volumen. No sustituyen a una monitorización avanzada, pero son una primera barrera suficiente para una entrega académica: si el modelo deja de acertar, si la población cambia, si faltan columnas o si deja de llegar un volumen razonable de datos, el equipo recibe una notificación.\par
+
+Los umbrales se han definido como controles iniciales prudentes, no como límites definitivos de negocio. El umbral de accuracy \nolinkurl{0,85} está por debajo del resultado observado para evitar ruido en las primeras ejecuciones, pero suficientemente alto para detectar una caída fuerte. El umbral de completitud \nolinkurl{0,95} busca detectar roturas de ingesta o columnas con nulos masivos antes de que contaminen el scoring. La alerta de drift \nolinkurl{0,05} se aplica sobre variables interpretables de negocio, evitando columnas temporales o identificadores. Por último, el z-score de volumen superior a \nolinkurl{2} actúa como detector de cambios bruscos en la cantidad de datos recibidos, útil si una fuente deja de enviar eventos o si se duplica una carga.\par
+
+La lógica operativa asociada a una alerta sería escalonada. Si falla completitud, primero se revisa la ingesta y la capa silver, porque el problema probablemente está en datos. Si falla drift pero el rendimiento sigue estable, se revisa si hay una campaña, estacionalidad o cambio de población. Si cae accuracy o F1 en producción, se prioriza el análisis del modelo y se plantea adelantar el job semanal de ML. Esta secuencia evita reentrenar automáticamente ante cualquier anomalía y obliga a diagnosticar la causa antes de actuar.\par
+
+\subsection{Arquitectura de jobs en producción}
+
+La arquitectura de jobs queda separada por responsabilidad. Esto evita mezclar el entrenamiento del modelo con la ejecución diaria de datos e inferencia.\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Job & \RaggedRight\arraybackslash ID & \RaggedRight\arraybackslash Frecuencia & \RaggedRight\arraybackslash Responsabilidad \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{[dev jose_barros1] Telco Churn - Simulation} & \RaggedRight\arraybackslash \nolinkurl{539833387139842} & \RaggedRight\arraybackslash Cada hora & \RaggedRight\arraybackslash Simular llegada continua de eventos de producción \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{[dev jose_barros1] Telco Churn - Hito 2 Orchestration} & \RaggedRight\arraybackslash \nolinkurl{304686448475692} & \RaggedRight\arraybackslash Diario a las 03:00 UTC & \RaggedRight\arraybackslash Ejecutar pipeline Medallion, registrar features y lanzar inferencia/enriquecimiento \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{[dev jose_barros1] Telco Churn - Hito 3 ML Orchestration} & \RaggedRight\arraybackslash \nolinkurl{28812759392282} & \RaggedRight\arraybackslash Lunes a la 01:00 UTC & \RaggedRight\arraybackslash Reentrenar, evaluar challenger y aplicar ciclo champion-challenger \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+El job diario de Hito 2 se compone de tres tareas:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Tarea & \RaggedRight\arraybackslash Función \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{run_telco_pipeline} & \RaggedRight\arraybackslash Actualizar bronze, silver y gold mediante Lakeflow Declarative Pipelines \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{run_feature_store_registration_simulation} & \RaggedRight\arraybackslash Registrar o refrescar la definición de features \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{run_inference_and_label_enrichment} & \RaggedRight\arraybackslash Aplicar el champion y propagar etiquetas reales \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth,height=0.72\textheight,keepaspectratio]{assets/hito4_pipeline_propietario_updates.png}
+\caption{Pipeline propietario de las tablas de producción}
+\end{figure}
+
+Figura 6. Pipeline propietario de las tablas compartidas de \nolinkurl{workspace.telco_churn}, con sus actualizaciones recientes en estado \nolinkurl{COMPLETED}.\par
+
+En el workspace compartido hay que tener en cuenta una restricción de Unity Catalog y Lakeflow: una tabla materializada solo puede estar gestionada por un pipeline propietario. Durante la validación desplegamos también los jobs en el usuario de Alonso, pero el pipeline diario de Alonso no debe ejecutarse contra las mismas tablas porque \nolinkurl{gold_customer_profile} y el resto de tablas gold pertenecen al pipeline desplegado por Jose. Por ese motivo, la validación de punta a punta se hizo con el job de Jose, que es el propietario efectivo de las tablas compartidas.\par
+
+Las cadencias se han elegido para equilibrar actualidad de datos y coste computacional. La simulación horaria genera movimiento frecuente para probar que el sistema reacciona a datos nuevos. El job diario a las 03:00 UTC deja margen para que las inyecciones del día anterior estén disponibles antes de actualizar bronze, silver y gold. El job semanal de ML se programa el lunes a la 01:00 UTC porque el reentrenamiento es más costoso y no necesita ejecutarse en cada lote de datos. Esta separación también facilita interpretar monitorización: si el modelo cambia todos los días, es más difícil saber si una variación de métricas se debe a drift de datos o a una nueva versión del modelo.\par
+
+El desfase entre simulación, pipeline diario e inferencia tiene una justificación adicional: las etiquetas de churn llegan con retraso respecto a los eventos de uso. Por tanto, una ejecución diaria puede insertar predicciones nuevas y, en otra ejecución posterior, completar etiquetas reales de meses anteriores. Esta asincronía es normal en problemas de churn y explica por qué \nolinkurl{gold_churn_inference_enriched} se ha diseñado como tabla incremental enriquecida, no como una tabla estática de predicción.\par
+
+\subsection{Validación ejecutada}
+
+Para validar Hito 4 no se relanzó el job semanal de ML porque incluye la búsqueda de hiperparámetros y tarda bastante más que una comprobación operativa. Si se relanza en su ventana programada, debe usar las correcciones de cortes temporales descritas al final de esta memoria para no crear un conjunto de test vacío cuando no haya avance real de fecha máxima.\par
+
+Las comprobaciones rápidas ejecutadas fueron:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Comprobación & \RaggedRight\arraybackslash Resultado \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{databricks bundle deploy} sobre el target \nolinkurl{dev} & \RaggedRight\arraybackslash \nolinkurl{Deployment complete} \\
+\hline
+\RaggedRight\arraybackslash Job de simulación de Alonso & \RaggedRight\arraybackslash Run \nolinkurl{1089331173774799}, \nolinkurl{SUCCESS} \\
+\hline
+\RaggedRight\arraybackslash Job diario de Jose & \RaggedRight\arraybackslash Run \nolinkurl{1053112867635794}, \nolinkurl{SUCCESS} \\
+\hline
+\RaggedRight\arraybackslash Tarea \nolinkurl{run_telco_pipeline} & \RaggedRight\arraybackslash \nolinkurl{SUCCESS}, 352 s \\
+\hline
+\RaggedRight\arraybackslash Tarea \nolinkurl{run_feature_store_registration_simulation} & \RaggedRight\arraybackslash \nolinkurl{SUCCESS}, 43 s \\
+\hline
+\RaggedRight\arraybackslash Tarea \nolinkurl{run_inference_and_label_enrichment} & \RaggedRight\arraybackslash \nolinkurl{SUCCESS}, 155 s \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth,height=0.72\textheight,keepaspectratio]{assets/hito4_job_diario_run_success.png}
+\caption{Job diario de datos e inferencia de Hito 4}
+\end{figure}
+
+Figura 7. Run \nolinkurl{1053112867635794} del job diario de datos e inferencia, con las tareas \nolinkurl{run_telco_pipeline}, \nolinkurl{run_feature_store_registration_simulation} y \nolinkurl{run_inference_and_label_enrichment} en estado \nolinkurl{SUCCESS}.\par
+
+El intento de lanzar el pipeline diario desde el bundle de Alonso falló por propiedad de tablas, no por error funcional del pipeline. El mensaje de Lakeflow indicaba que \nolinkurl{workspace.telco_churn.gold_customer_profile} ya estaba gestionada por el pipeline \nolinkurl{c69014f7-c33e-4919-afc4-454f9aabfc17}. Esto confirma que, en un workspace compartido, debemos elegir un único pipeline propietario para las tablas de producción o separar schemas por usuario.\par
+
+Además de los estados de job, se revisaron evidencias técnicas en las tablas de Unity Catalog. La validación no se basó solo en que un job terminase en verde: se comprobó que la tabla de inferencia tuviera filas, que todas las predicciones quedaran asociadas a una versión de modelo, que las etiquetas reales hubieran sido propagadas y que las tablas de monitorización tuvieran métricas generadas. Esto es importante porque un job puede terminar correctamente y aun así no producir datos útiles si los filtros temporales son incorrectos.\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Evidencia técnica & \RaggedRight\arraybackslash Qué demuestra \\
+\hline
+\RaggedRight\arraybackslash Run \nolinkurl{1089331173774799} del job de simulación en \nolinkurl{SUCCESS} & \RaggedRight\arraybackslash La llegada incremental de datos puede ejecutarse desde el bundle desplegado. \\
+\hline
+\RaggedRight\arraybackslash Run \nolinkurl{1053112867635794} del job diario en \nolinkurl{SUCCESS} & \RaggedRight\arraybackslash El flujo pipeline + features + inferencia se completa de punta a punta. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{1.937.801} filas en \nolinkurl{gold_churn_inference_enriched} & \RaggedRight\arraybackslash La inferencia no quedó vacía y produjo datos de producción. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{model_version = 2} en las predicciones & \RaggedRight\arraybackslash El scoring usa el champion esperado de Unity Catalog. \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{1.050} filas de profile metrics y \nolinkurl{420} filas de drift metrics & \RaggedRight\arraybackslash Lakehouse Monitoring generó métricas reales sobre la tabla monitorizada. \\
+\hline
+\RaggedRight\arraybackslash Alertas en estado \nolinkurl{OK} & \RaggedRight\arraybackslash Las consultas de control están activas y no detectan incumplimientos en la última evaluación. \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Resultados observados en producción}
+
+La tabla de inferencia enriquecida contiene predicciones para los meses de enero y febrero de 2025:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Métrica & \RaggedRight\arraybackslash Valor \\
+\hline
+\RaggedRight\arraybackslash Filas en \nolinkurl{gold_churn_inference_enriched} & \RaggedRight\arraybackslash \nolinkurl{1.937.801} \\
+\hline
+\RaggedRight\arraybackslash Clientes distintos & \RaggedRight\arraybackslash \nolinkurl{1.066.410} \\
+\hline
+\RaggedRight\arraybackslash Ventana de producción & \RaggedRight\arraybackslash \nolinkurl{2025-01} a \nolinkurl{2025-02} \\
+\hline
+\RaggedRight\arraybackslash Filas con etiqueta real & \RaggedRight\arraybackslash \nolinkurl{1.937.801} \\
+\hline
+\RaggedRight\arraybackslash Versiones de modelo usadas & \RaggedRight\arraybackslash \nolinkurl{1} \\
+\hline
+\RaggedRight\arraybackslash Versión usada & \RaggedRight\arraybackslash \nolinkurl{2} \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+La distribución de predicciones permite comprobar que el modelo no está marcando todos los clientes de la misma forma:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.188\textwidth}|p{0.188\textwidth}|p{0.188\textwidth}|p{0.188\textwidth}|p{0.188\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Versión & \RaggedRight\arraybackslash Predicción & \RaggedRight\arraybackslash Filas & \RaggedRight\arraybackslash Probabilidad media de churn & \RaggedRight\arraybackslash Churn observado \\
+\hline
+\RaggedRight\arraybackslash 2 & \RaggedRight\arraybackslash 0 & \RaggedRight\arraybackslash \nolinkurl{1.683.047} & \RaggedRight\arraybackslash \nolinkurl{0,0726} & \RaggedRight\arraybackslash \nolinkurl{1,04%} \\
+\hline
+\RaggedRight\arraybackslash 2 & \RaggedRight\arraybackslash 1 & \RaggedRight\arraybackslash \nolinkurl{254.754} & \RaggedRight\arraybackslash \nolinkurl{0,9600} & \RaggedRight\arraybackslash \nolinkurl{45,04%} \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+El grupo marcado como riesgo concentra una tasa de churn real mucho mayor que el grupo marcado como no riesgo. Esto es coherente con el objetivo del proyecto: priorizar clientes sobre los que una operadora podría actuar con campañas de retención.\par
+
+La baseline de monitorización sigue siendo la ventana de test del champion:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.188\textwidth}|p{0.188\textwidth}|p{0.188\textwidth}|p{0.188\textwidth}|p{0.188\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Tabla & \RaggedRight\arraybackslash Filas & \RaggedRight\arraybackslash Ventana & \RaggedRight\arraybackslash Tasa de churn & \RaggedRight\arraybackslash Tasa de predicción positiva \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{gold_churn_test_baseline} & \RaggedRight\arraybackslash \nolinkurl{3.153.742} & \RaggedRight\arraybackslash \nolinkurl{2024-10} a \nolinkurl{2024-12} & \RaggedRight\arraybackslash \nolinkurl{4,29%} & \RaggedRight\arraybackslash \nolinkurl{4,21%} \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+En producción observamos que enero de 2025 no contiene churn etiquetado, mientras que febrero alcanza aproximadamente un \nolinkurl{14,6%} de churn. Esta diferencia es una señal clara de cambio temporal en la población, compatible con el drift introducido por el generador para 2025.\par
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth,height=0.72\textheight,keepaspectratio]{assets/hito4_inference_table_counts.png}
+\caption{Consulta de la tabla de inferencia enriquecida}
+\end{figure}
+
+Figura 8. Consulta sobre \nolinkurl{workspace.telco_churn.gold_churn_inference_enriched}, con recuentos de producción, ventana temporal, versión de modelo y distribución de predicciones.\par
+
+\subsection{Resultados de monitorización}
+
+Las tablas de monitorización ya tienen datos generados:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Tabla de métricas & \RaggedRight\arraybackslash Filas & \RaggedRight\arraybackslash Ventana & \RaggedRight\arraybackslash Columnas perfiladas \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{gold_churn_inference_enriched_profile_metrics} & \RaggedRight\arraybackslash \nolinkurl{1.050} & \RaggedRight\arraybackslash \nolinkurl{2026-05-01} a \nolinkurl{2026-05-03} & \RaggedRight\arraybackslash \nolinkurl{42} \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{gold_churn_inference_enriched_drift_metrics} & \RaggedRight\arraybackslash \nolinkurl{420} & \RaggedRight\arraybackslash \nolinkurl{2026-05-01} a \nolinkurl{2026-05-03} & \RaggedRight\arraybackslash \nolinkurl{42} \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+En la última ventana disponible, el rendimiento global del modelo versión 2 fue:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Métrica & \RaggedRight\arraybackslash Valor \\
+\hline
+\RaggedRight\arraybackslash Filas evaluadas & \RaggedRight\arraybackslash \nolinkurl{1.937.801} \\
+\hline
+\RaggedRight\arraybackslash Accuracy & \RaggedRight\arraybackslash \nolinkurl{0,9187} \\
+\hline
+\RaggedRight\arraybackslash F1 ponderado & \RaggedRight\arraybackslash \nolinkurl{0,9301} \\
+\hline
+\RaggedRight\arraybackslash Precisión ponderada & \RaggedRight\arraybackslash \nolinkurl{0,9528} \\
+\hline
+\RaggedRight\arraybackslash Recall ponderado & \RaggedRight\arraybackslash \nolinkurl{0,9187} \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+El resultado global está por encima del umbral de alerta de accuracy, pero el análisis por cortes muestra un punto a vigilar:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|p{0.235\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Corte & \RaggedRight\arraybackslash Filas & \RaggedRight\arraybackslash Accuracy & \RaggedRight\arraybackslash F1 ponderado \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{days_payment_late > 0 = false} & \RaggedRight\arraybackslash \nolinkurl{1.874.074} & \RaggedRight\arraybackslash \nolinkurl{0,9298} & \RaggedRight\arraybackslash \nolinkurl{0,9393} \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{days_payment_late > 0 = true} & \RaggedRight\arraybackslash \nolinkurl{63.727} & \RaggedRight\arraybackslash \nolinkurl{0,5923} & \RaggedRight\arraybackslash \nolinkurl{0,5946} \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Esto indica que el modelo se comporta peor en clientes con retrasos de pago. Desde el punto de vista de negocio, es un hallazgo útil: el sistema no solo produce una métrica global, sino que permite detectar segmentos donde la decisión puede ser menos fiable y donde convendría revisar variables, umbrales o incluso una estrategia específica.\par
+
+En drift, la columna temporal \nolinkurl{year_month} muestra una distancia alta porque la producción corresponde a meses posteriores a la baseline. No se debe usar esa columna para disparar alertas de cambio de distribución de negocio. Al excluir identificadores, timestamps y campos puramente temporales, las mayores distancias JS observadas quedan por debajo del umbral \nolinkurl{0,05}:\par
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{|p{0.470\textwidth}|p{0.470\textwidth}|}
+\hline
+\RaggedRight\arraybackslash Columna & \RaggedRight\arraybackslash JS distance aproximada \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{age_group} & \RaggedRight\arraybackslash \nolinkurl{0,0143} \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{tariff_plan} & \RaggedRight\arraybackslash \nolinkurl{0,0130} \\
+\hline
+\RaggedRight\arraybackslash \nolinkurl{contract_risk_group} & \RaggedRight\arraybackslash \nolinkurl{0,0109} \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Por tanto, las alertas de drift permanecen en \nolinkurl{OK}. La monitorización confirma que hay cambio temporal en los datos de producción, pero no un desplazamiento fuerte de las variables de negocio seleccionadas respecto al baseline.\par
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth,height=0.72\textheight,keepaspectratio]{assets/hito4_lakehouse_monitor_dashboard.png}
+\caption{Dashboard de Lakehouse Monitoring}
+\end{figure}
+
+Figura 9. Evidencia de monitorización sobre la tabla \nolinkurl{gold_churn_inference_enriched}, con métricas de producción, drift o cortes operativos.\par
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth,height=0.72\textheight,keepaspectratio]{assets/hito4_alerts_ok.png}
+\caption{Alertas SQL de monitorización en estado OK}
+\end{figure}
+
+Figura 10. Alertas SQL configuradas para Hito 4, con controles de accuracy, drift, completitud y volumen en estado \nolinkurl{OK}.\par
+
+
+\subsection{Cierre del Hito 4}
+
+El Hito 4 queda cerrado con simulación de datos, orquestación programada, inferencia batch, enriquecimiento con etiquetas reales, tabla de producción monitorizada, dashboards visibles, alertas activas y evidencia de ejecución reciente. El sistema todavía no es una plataforma de MLOps completa, pero ya cubre el ciclo mínimo esperado en la guía: datos nuevos, predicciones, comparación contra baseline, observabilidad y mecanismo de reacción ante degradación.\par
 \end{document}

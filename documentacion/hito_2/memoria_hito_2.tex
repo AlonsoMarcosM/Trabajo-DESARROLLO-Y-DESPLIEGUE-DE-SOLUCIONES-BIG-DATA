@@ -1,4 +1,4 @@
-﻿\documentclass[12pt,a4paper]{article}
+\documentclass[12pt,a4paper]{article}
 
 \usepackage[spanish,es-tabla]{babel}
 \usepackage[utf8]{inputenc}
@@ -184,30 +184,30 @@ Una decisión importante de esta fase fue consolidar un único workspace operati
 \begin{itemize}
     \item Catálogo: \texttt{workspace},
     \item Esquema operativo del proyecto: \texttt{workspace.telco\_churn},
-    \item Volumen de entrada: \texttt{/Volumes/workspace/telco\_churn/landing\_zone}.
+    \item Volumen de entrada: volumen UC \texttt{landing\_zone} dentro de \texttt{workspace.telco\_churn}.
 \end{itemize}
 
 Además de la estructura, se añadieron descripciones visibles en catálogo, esquema, volumen y pipeline para que cualquier miembro del equipo pueda entender rápidamente qué recurso es oficial y cuál no, directamente desde la UI de Databricks, sin tener que abrir código local.
 
-Durante la fase de despliegue apareció una incidencia crítica de operativa (\texttt{413 Request Entity Too Large}) al intentar sincronizar datos masivos junto con el bundle. La solución fue separar de forma estricta ``código versionable'' y ``artefacto generado'', excluyendo del \texttt{sync} los directorios de datos (\texttt{context/**}, \texttt{events/**}, \texttt{source\_buffer/**}) y logs de generación. Este ajuste fue clave para estabilizar \texttt{validate/deploy} y dejar un flujo reproducible para ambos integrantes del equipo.
+Durante la fase de despliegue apareció una incidencia crítica de operativa (\texttt{413 Request Entity Too Large}) al intentar sincronizar datos masivos junto con el bundle. La solución fue separar de forma estricta ``código versionable'' y ``artefacto generado'', excluyendo del \texttt{sync} las salidas generadas por el simulador y los logs de generación. Este ajuste fue clave para estabilizar \texttt{validate/deploy} y dejar un flujo reproducible para ambos integrantes del equipo.
 
 \subsection{Fuentes de datos y ventana temporal}
 
-La generación de datos sintéticos se realiza con \path{codigo/src/medallion_pipeline/utilities/generate.py}. Este script crea el maestro de clientes (\texttt{context/customers.csv}), los eventos mensuales de uso, interacciones y etiquetas en \texttt{events/YYYY/MM/data.json}, y una zona adicional \texttt{source\_buffer} para datos de 2025 con deriva simulada de producción.
+La generación de datos sintéticos se realiza con \path{codigo/src/medallion_pipeline/utilities/generate.py}. Este script crea el maestro de clientes, los eventos mensuales de uso, interacciones y etiquetas, y una zona adicional de producción simulada para datos de 2025 con deriva.
 
 En la práctica, el script genera un volumen de información suficientemente grande para tensionar la ejecución en Free Edition y obligar a tomar decisiones técnicas reales de rendimiento. Esto era un objetivo del hito: demostrar un escenario cercano a Big Data, no un ejemplo mínimo.
 
 Desde el punto de vista temporal, en Hito 2 se decidió mantener una frontera clara entre histórico y producción simulada:
 \begin{itemize}
-    \item \texttt{events/*} se trata como histórico de entrenamiento (2023--2024),
-    \item \texttt{source\_buffer/*} se conserva como bloque de 2025 con deriva, útil para validación temporal posterior.
+    \item La zona histórica de eventos se trata como base de entrenamiento (2023--2024),
+    \item La zona de producción simulada se conserva como bloque de 2025 con deriva, útil para validación temporal posterior.
 \end{itemize}
 
 Esta separación evita mezclar periodos sin control y deja preparado el terreno para un Hito 3 metodológicamente correcto, especialmente en lo relativo a fuga temporal de información.
 
 \subsection{Arquitectura medallion ejecutada}
 
-A continuación se describe cada capa por separado para que quede claro qué responsabilidad tiene, qué tablas materializa y qué datos contiene cada salida. Los recuentos indicados corresponden a la carga histórica usada en Hito 2: \texttt{context/customers.csv} y \texttt{events/*} para 2023--2024. Los ficheros de 2025 se mantienen en \texttt{source\_buffer/*} como producción simulada con deriva y no entran automáticamente en estas tablas si no se amplía la ingesta.
+A continuación se describe cada capa por separado para que quede claro qué responsabilidad tiene, qué tablas materializa y qué datos contiene cada salida. Los recuentos indicados corresponden a la carga histórica usada en Hito 2: maestro de clientes y eventos de 2023--2024. Los datos de 2025 se mantienen como producción simulada con deriva y no entran automáticamente en estas tablas si no se amplía la ingesta.
 
 \subsubsection{Capa bronze: ingesta y trazabilidad}
 
@@ -406,7 +406,7 @@ valid\_interaction\_type & \texttt{interaction\_type IN (...)} & El tipo de inte
 La robustez del Hito 2 no se plantea como una lista de errores internos de desarrollo, sino como un conjunto de decisiones concretas de ingeniería y operación que hacen reproducible el pipeline:
 
 \begin{itemize}
-    \item Separación estricta entre código versionable y datos generados. Los directorios \texttt{context/}, \texttt{events/}, \texttt{source\_buffer/} y los logs del generador se excluyen del bundle para que \texttt{validate} y \texttt{deploy} no intenten sincronizar artefactos masivos.
+    \item Separación estricta entre código versionable y datos generados. Las salidas masivas del generador y sus logs se excluyen del bundle para que \texttt{validate} y \texttt{deploy} no intenten sincronizar artefactos pesados.
     \item Imports robustos para ejecución en Databricks. Las reglas de calidad viven en \path{src/medallion_pipeline/rules/} y se cargan desde el \texttt{bundle.sourcePath} inyectado por el pipeline.
     \item Capa silver con cuarentena explícita. Cada entidad tiene un flujo de evaluación y una tabla de cuarentena, lo que permite que el pipeline siga siendo trazable aunque en futuras cargas aparezcan registros inválidos.
     \item Enriquecimiento de eventos con patrón stream-static. Para Hito 2 se mantiene \texttt{bronze\_usage} como flujo incremental y se cruza con una vista estática de etiquetas mensuales válidas.

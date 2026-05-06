@@ -3,15 +3,77 @@
 Este documento resume los cambios funcionales y el estado tecnico del proyecto
 en Databricks, centrado en la carpeta `codigo/`.
 
+## 2026-05-06 - Cierre tecnico Hito 4, monitorizacion y runbook reproducible
+
+### Resumen ejecutivo
+
+- Desplegado el bundle en target `dev` para dejar visibles los jobs actuales.
+- Validado el job de simulacion del despliegue de Alonso.
+- Validada la orquestacion diaria de punta a punta con el job propietario de las tablas compartidas.
+- Documentados los pasos reproducibles por CLI y UI en `README.md`, `src/medallion_pipeline/README.md` y `documentacion/hito_4/memoria_hito_4.md`.
+- Corregida la logica de cortes temporales de Hito 3 para evitar conjuntos de test vacios cuando la fecha maxima de datos no avanza.
+
+### Estado validado
+
+- Simulation job de Alonso:
+  - job id: `134780552623506`
+  - run id: `1089331173774799`
+  - estado: `SUCCESS`
+- Orquestacion diaria compartida:
+  - job id: `304686448475692`
+  - run id: `1053112867635794`
+  - estado: `SUCCESS`
+  - tareas validadas: `run_telco_pipeline`, `run_feature_store_registration_simulation`, `run_inference_and_label_enrichment`
+- Tabla de inferencia:
+  - `workspace.telco_churn.gold_churn_inference_enriched`
+  - filas: `1.937.801`
+  - clientes distintos: `1.066.410`
+  - ventana: `2025-01` a `2025-02`
+  - modelo usado: version `2`
+
+### Como reproducir la validacion Hito 4
+
+Ejecutar desde `codigo/`:
+
+```powershell
+databricks bundle validate -t dev -p <perfil_databricks>
+databricks bundle deploy -t dev -p <perfil_databricks>
+databricks bundle run telco_churn_simulation -t dev -p <perfil_databricks>
+databricks jobs run-now 304686448475692 -p <perfil_databricks>
+databricks jobs get-run <run_id> -p <perfil_databricks>
+```
+
+Comprobar monitorizacion y alertas:
+
+```powershell
+databricks alerts-v2 list-alerts -p <perfil_databricks>
+databricks lakeview list -p <perfil_databricks>
+```
+
+Consulta SQL minima:
+
+```sql
+SELECT COUNT(*) AS total_rows,
+       COUNT(DISTINCT customer_id) AS distinct_customers,
+       MIN(year_month) AS min_month,
+       MAX(year_month) AS max_month
+FROM workspace.telco_churn.gold_churn_inference_enriched;
+```
+
+### Nota de operacion
+
+En el schema compartido `workspace.telco_churn`, las tablas gold estan gestionadas por un unico pipeline propietario. Si otro despliegue intenta materializar esas mismas tablas, Lakeflow devuelve error de propiedad. Para reproducir la validacion sin tocar tablas ni ownership, se debe lanzar el job propietario o usar un schema separado.
+
 ## 2026-04-22 - Cierre tecnico Hito 3 y orquestacion ML
 
 ### Resumen ejecutivo
 
 - Implementado el ciclo de modelado de Hito 3 con notebooks independientes y job de Databricks.
 - Separados los jobs por fichero de recurso, siguiendo la estructura recomendada por Databricks y el ejemplo del profesor:
-  - `resources/telco_churn.job.yml`: job Hito 2.
-  - `resources/telco_churn_ml.job.yml`: job Hito 3.
-- Eliminado de `databricks.yml` el patron muerto `data_generator/` porque no existe en el repositorio y generaba warning.
+  - `resources/telco_churn_orchestration.job.yml`: job diario de datos e inferencia.
+  - `resources/telco_churn_ml_orchestration.job.yml`: job Hito 3.
+  - `resources/telco_churn_simulation.job.yml`: job de simulacion de Hito 4.
+- Eliminado de `databricks.yml` un patron muerto de sincronizacion que no existia en el repositorio y generaba warning.
 - Mantenidas las exclusiones reales de artefactos masivos generados por `generate.py`.
 
 ### Estado validado (workspace objetivo)
@@ -84,7 +146,7 @@ FROM workspace.telco_churn.gold_churn_test_baseline;
 
 ### Nota sobre reejecucion
 
-- No hace falta relanzar el job de Hito 3 por separar `telco_churn_ml.job.yml`: solo cambia la organizacion del bundle, no la logica de tareas.
+- No hace falta relanzar el job de Hito 3 por separar `telco_churn_ml_orchestration.job.yml`: solo cambia la organizacion del bundle, no la logica de tareas.
 - Si se cambia el codigo de notebooks `05`, `07` u `08`, entonces si procede relanzar `telco_churn_ml_orchestration`.
 - Si solo se actualizan documentos o comentarios YAML, basta con `bundle validate` y, si queremos reflejarlo en Databricks, `bundle deploy`.
 
@@ -102,7 +164,7 @@ FROM workspace.telco_churn.gold_churn_test_baseline;
 - `pipeline_id`: `e9417948-9ced-41ae-a21a-8fcfd9994e37`
 - Update `COMPLETED`: `aae8711c-6d5f-4502-b237-41f6b738c0e6` (2026-03-14)
 - Catalog/esquema: `workspace.telco_churn`
-- Volume de entrada: `/Volumes/workspace/telco_churn/landing_zone`
+- Volume de entrada: `<landing_volume_path>`
 - Job orquestado Hito 2: `992681729800259`
 - Run del job validada en `SUCCESS`: `640253146512278`
 
@@ -141,17 +203,17 @@ FROM workspace.telco_churn.gold_churn_test_baseline;
 
 - `pipeline_id`: `e9417948-9ced-41ae-a21a-8fcfd9994e37`
 - Update `COMPLETED`: `bd86df0d-af54-4bf5-b935-9f6c6a477aa9` (2026-03-10)
-- `landing_volume_path`: `/Volumes/workspace/default/landing_zone`
+- `landing_volume_path`: `<landing_volume_path>`
 
 ### Datos generados con `generate.py` (local)
 
 - Total customers: `3,050,000`
 - Total usage rows: `36,896,754`
 - Total interactions: `19,379,826`
-- Tamano aproximado:
-  - `utilities/context`: `0.40 GB`
-  - `utilities/events`: `17.22 GB`
-  - `utilities/source_buffer`: `2.61 GB`
+- Tamano aproximado de salidas generadas:
+  - contexto: `0.40 GB`
+  - eventos historicos: `17.22 GB`
+  - produccion simulada: `2.61 GB`
 
 ### Datos cargados y procesados en pipeline (workspace)
 
@@ -177,9 +239,8 @@ FROM workspace.telco_churn.gold_churn_test_baseline;
 
 Nota:
 
-- El generador escribe parte de 2025 en `utilities/source_buffer`.
-- Esa rama (`source_buffer`) esta subida al Volume, pero no esta consumida por
-  el script de ingestion actual (`01_bronze_ingestion.py`), que lee `events/*`.
+- El generador escribe parte de 2025 como bloque de produccion simulada.
+- Ese bloque esta cargado en el volumen, pero no se consume en la ingesta historica inicial.
 
 Decision metodologica para Hito 3:
 
@@ -201,8 +262,7 @@ Decision metodologica para Hito 3:
 - `03_gold_features.py`
   - capa gold activa para features y dataset de entrenamiento.
 - `.gitignore`
-  - exclusion de `codigo/.databricks/` y datos generados (`context`, `events`,
-    `source_buffer`, `generate_full.log`).
+  - exclusion de estado local del CLI y salidas masivas generadas.
 
 ### Incidencias registradas y resolucion
 
@@ -226,6 +286,5 @@ Decision metodologica para Hito 3:
 
 ## Pendientes tecnicos (si se decide ampliar Hito 2)
 
-- Incluir ingestion explicita de `source_buffer/2025` si se quiere que la capa
-  gold contenga tambien 2025-01 a 2025-06 en esta fase.
+- Incluir ingesta explicita del bloque de produccion simulada si se quiere que la capa gold contenga tambien 2025-01 a 2025-06 en esta fase.
 - Formalizar versionado semantico de releases (`v0.1.0`, `v0.2.0`, etc.).

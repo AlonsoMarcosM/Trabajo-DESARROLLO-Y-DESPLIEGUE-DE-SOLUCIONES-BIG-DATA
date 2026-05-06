@@ -1,4 +1,4 @@
-﻿# Memoria técnica incremental del proyecto (Hitos 1 y 2)
+# Memoria técnica incremental del proyecto (Hitos 1 y 2)
 
 ## Datos de la entrega
 
@@ -129,28 +129,28 @@ Una decisión importante de esta fase fue consolidar un único workspace operati
 
 - Catálogo: `workspace`
 - Esquema operativo del proyecto: `workspace.telco_churn`
-- Volumen de entrada: `/Volumes/workspace/telco_churn/landing_zone`
+- Volumen de entrada: volumen UC `landing_zone` dentro de `workspace.telco_churn`
 
 Además de la estructura, se añadieron descripciones visibles en catálogo, esquema, volumen y pipeline para que cualquier miembro del equipo pueda entender rápidamente qué recurso es oficial y cuál no, directamente desde la UI de Databricks, sin tener que abrir código local.
 
-Durante la fase de despliegue apareció una incidencia crítica de operativa (`413 Request Entity Too Large`) al intentar sincronizar datos masivos junto con el bundle. La solución fue separar de forma estricta “código versionable” y “artefacto generado”, excluyendo del `sync` los directorios de datos (`context/**`, `events/**`, `source_buffer/**`) y logs de generación. Este ajuste fue clave para estabilizar `validate/deploy` y dejar un flujo reproducible para ambos integrantes del equipo.
+Durante la fase de despliegue apareció una incidencia crítica de operativa (`413 Request Entity Too Large`) al intentar sincronizar datos masivos junto con el bundle. La solución fue separar de forma estricta “código versionable” y “artefacto generado”, excluyendo del `sync` las salidas generadas por el simulador y los logs de generación. Este ajuste fue clave para estabilizar `validate/deploy` y dejar un flujo reproducible para ambos integrantes del equipo.
 
 ### Fuentes de datos y ventana temporal
 
-La generación de datos sintéticos se realiza con `codigo/src/medallion_pipeline/utilities/generate.py`. Este script crea el maestro de clientes (`context/customers.csv`), los eventos mensuales de uso, interacciones y etiquetas en `events/YYYY/MM/data.json`, y una zona adicional `source_buffer` para datos de 2025 con deriva simulada de producción.
+La generación de datos sintéticos se realiza con `codigo/src/medallion_pipeline/utilities/generate.py`. Este script crea el maestro de clientes, los eventos mensuales de uso, interacciones y etiquetas, y una zona adicional de producción simulada para datos de 2025 con deriva.
 
 En la práctica, el script genera un volumen de información suficientemente grande para tensionar la ejecución en Free Edition y obligar a tomar decisiones técnicas reales de rendimiento. Esto era un objetivo del hito: demostrar un escenario cercano a Big Data, no un ejemplo mínimo.
 
 Desde el punto de vista temporal, en Hito 2 se decidió mantener una frontera clara entre histórico y producción simulada:
 
-- `events/*` se trata como histórico de entrenamiento (2023-2024).
-- `source_buffer/*` se conserva como bloque de 2025 con deriva, útil para validación temporal posterior.
+- La zona histórica de eventos se trata como base de entrenamiento (2023-2024).
+- La zona de producción simulada se conserva como bloque de 2025 con deriva, útil para validación temporal posterior.
 
 Esta separación evita mezclar periodos sin control y deja preparado el terreno para un Hito 3 metodológicamente correcto, especialmente en lo relativo a fuga temporal de información.
 
 ### Arquitectura medallion ejecutada
 
-A continuación se describe cada capa por separado para que quede claro qué responsabilidad tiene, qué tablas materializa y qué datos contiene cada salida. Los recuentos indicados corresponden a la carga histórica usada en Hito 2: `context/customers.csv` y `events/*` para 2023-2024. Los ficheros de 2025 se mantienen en `source_buffer/*` como producción simulada con deriva y no entran automáticamente en estas tablas si no se amplía la ingesta.
+A continuación se describe cada capa por separado para que quede claro qué responsabilidad tiene, qué tablas materializa y qué datos contiene cada salida. Los recuentos indicados corresponden a la carga histórica usada en Hito 2: maestro de clientes y eventos de 2023-2024. Los datos de 2025 se mantienen como producción simulada con deriva y no entran automáticamente en estas tablas si no se amplía la ingesta.
 
 #### Capa bronze: ingesta y trazabilidad
 
@@ -261,7 +261,7 @@ Los eventos de interacción enriquecen el perfil del cliente con señales de com
 
 La robustez del Hito 2 no se plantea como una lista de errores internos de desarrollo, sino como un conjunto de decisiones concretas de ingeniería y operación que hacen reproducible el pipeline:
 
-- Separación estricta entre código versionable y datos generados. Los directorios `context/`, `events/`, `source_buffer/` y los logs del generador se excluyen del bundle para que `validate` y `deploy` no intenten sincronizar artefactos masivos.
+- Separación estricta entre código versionable y datos generados. Las salidas masivas del generador y sus logs se excluyen del bundle para que `validate` y `deploy` no intenten sincronizar artefactos pesados.
 - Imports robustos para ejecución en Databricks. Las reglas de calidad viven en `src/medallion_pipeline/rules/` y se cargan desde el `bundle.sourcePath` inyectado por el pipeline, manteniendo la separación entre reglas y transformaciones.
 - Capa silver con cuarentena explícita. Cada entidad tiene un flujo de evaluación y una tabla de cuarentena, lo que permite que el pipeline siga siendo trazable aunque en futuras cargas aparezcan registros inválidos.
 - Enriquecimiento de eventos con patrón stream-static. Para Hito 2 se mantiene `bronze_usage` como flujo incremental y se cruza con una vista estática de etiquetas mensuales válidas. Esta decisión es suficiente para una carga histórica mensual y reduce complejidad operativa frente a un join stream-stream completo.

@@ -130,28 +130,28 @@ Una decisión importante de esta fase fue consolidar un único workspace operati
 
 - Catálogo: `workspace`
 - Esquema operativo del proyecto: `workspace.telco_churn`
-- Volumen de entrada: `/Volumes/workspace/telco_churn/landing_zone`
+- Volumen de entrada: volumen UC `landing_zone` dentro de `workspace.telco_churn`
 
 Además de la estructura, se añadieron descripciones visibles en catálogo, esquema, volumen y pipeline para que cualquier miembro del equipo pueda entender rápidamente qué recurso es oficial y cuál no, directamente desde la UI de Databricks, sin tener que abrir código local.
 
-Durante la fase de despliegue apareció una incidencia crítica de operativa (`413 Request Entity Too Large`) al intentar sincronizar datos masivos junto con el bundle. La solución fue separar de forma estricta “código versionable” y “artefacto generado”, excluyendo del `sync` los directorios de datos (`context/**`, `events/**`, `source_buffer/**`) y logs de generación. Este ajuste fue clave para estabilizar `validate/deploy` y dejar un flujo reproducible para ambos integrantes del equipo.
+Durante la fase de despliegue apareció una incidencia crítica de operativa (`413 Request Entity Too Large`) al intentar sincronizar datos masivos junto con el bundle. La solución fue separar de forma estricta “código versionable” y “artefacto generado”, excluyendo del `sync` las salidas generadas por el simulador y los logs de generación. Este ajuste fue clave para estabilizar `validate/deploy` y dejar un flujo reproducible para ambos integrantes del equipo.
 
 ### Fuentes de datos y ventana temporal
 
-La generación de datos sintéticos se realiza con `codigo/src/medallion_pipeline/utilities/generate.py`. Este script crea el maestro de clientes (`context/customers.csv`), los eventos mensuales de uso, interacciones y etiquetas en `events/YYYY/MM/data.json`, y una zona adicional `source_buffer` para datos de 2025 con deriva simulada de producción.
+La generación de datos sintéticos se realiza con `codigo/src/medallion_pipeline/utilities/generate.py`. Este script crea el maestro de clientes, los eventos mensuales de uso, interacciones y etiquetas, y una zona adicional de producción simulada para datos de 2025 con deriva.
 
 En la práctica, el script genera un volumen de información suficientemente grande para tensionar la ejecución en Free Edition y obligar a tomar decisiones técnicas reales de rendimiento. Esto era un objetivo del hito: demostrar un escenario cercano a Big Data, no un ejemplo mínimo.
 
 Desde el punto de vista temporal, en Hito 2 se decidió mantener una frontera clara entre histórico y producción simulada:
 
-- `events/*` se trata como histórico de entrenamiento (2023-2024).
-- `source_buffer/*` se conserva como bloque de 2025 con deriva, útil para validación temporal posterior.
+- La zona histórica de eventos se trata como base de entrenamiento (2023-2024).
+- La zona de producción simulada se conserva como bloque de 2025 con deriva, útil para validación temporal posterior.
 
 Esta separación evita mezclar periodos sin control y deja preparado el terreno para un Hito 3 metodológicamente correcto, especialmente en lo relativo a fuga temporal de información.
 
 ### Arquitectura medallion ejecutada
 
-A continuación se describe cada capa por separado para que quede claro qué responsabilidad tiene, qué tablas materializa y qué datos contiene cada salida. Los recuentos indicados corresponden a la carga histórica usada en Hito 2: `context/customers.csv` y `events/*` para 2023-2024. Los ficheros de 2025 se mantienen en `source_buffer/*` como producción simulada con deriva y no entran automáticamente en estas tablas si no se amplía la ingesta.
+A continuación se describe cada capa por separado para que quede claro qué responsabilidad tiene, qué tablas materializa y qué datos contiene cada salida. Los recuentos indicados corresponden a la carga histórica usada en Hito 2: maestro de clientes y eventos de 2023-2024. Los datos de 2025 se mantienen como producción simulada con deriva y no entran automáticamente en estas tablas si no se amplía la ingesta.
 
 #### Capa bronze: ingesta y trazabilidad
 
@@ -262,7 +262,7 @@ Los eventos de interacción enriquecen el perfil del cliente con señales de com
 
 La robustez del Hito 2 no se plantea como una lista de errores internos de desarrollo, sino como un conjunto de decisiones concretas de ingeniería y operación que hacen reproducible el pipeline:
 
-- Separación estricta entre código versionable y datos generados. Los directorios `context/`, `events/`, `source_buffer/` y los logs del generador se excluyen del bundle para que `validate` y `deploy` no intenten sincronizar artefactos masivos.
+- Separación estricta entre código versionable y datos generados. Las salidas masivas del generador y sus logs se excluyen del bundle para que `validate` y `deploy` no intenten sincronizar artefactos pesados.
 - Imports robustos para ejecución en Databricks. Las reglas de calidad viven en `src/medallion_pipeline/rules/` y se cargan desde el `bundle.sourcePath` inyectado por el pipeline, manteniendo la separación entre reglas y transformaciones.
 - Capa silver con cuarentena explícita. Cada entidad tiene un flujo de evaluación y una tabla de cuarentena, lo que permite que el pipeline siga siendo trazable aunque en futuras cargas aparezcan registros inválidos.
 - Enriquecimiento de eventos con patrón stream-static. Para Hito 2 se mantiene `bronze_usage` como flujo incremental y se cruza con una vista estática de etiquetas mensuales válidas. Esta decisión es suficiente para una carga histórica mensual y reduce complejidad operativa frente a un join stream-stream completo.
@@ -310,21 +310,15 @@ En términos académicos y técnicos, el objetivo del hito se considera cumplido
 
 El tercer hito convierte la base de datos gobernada del Hito 2 en un ciclo de modelado reproducible para predicción de churn. El objetivo no es únicamente entrenar un clasificador, sino dejar trazado el proceso completo: generación del dataset de entrenamiento con garantías temporales, experimentación con MLflow, registro del mejor candidato en Unity Catalog y evaluación champion-challenger antes de aceptar o rechazar un modelo.
 
-La guía oficial separa esta fase del pipeline declarativo Medallion. Por tanto, el código de datos sigue viviendo en `src/medallion_pipeline/transformations/` y el modelado se implementa en `notebooks/`, orquestado mediante un Job de Databricks. No se han añadido notebooks de ML a `resources/telco_churn.pipeline.yml` porque ese recurso define el pipeline de datos; forzar ahí el entrenamiento rompería la separación recomendada entre ingeniería de datos y MLOps.
+La guía oficial separa esta fase del pipeline declarativo Medallion. Por tanto, el código de datos sigue viviendo en `src/medallion_pipeline/transformations/` y el modelado se ejecuta como un flujo independiente orquestado mediante un Job de Databricks. No se ha añadido la lógica de ML a `resources/telco_churn.pipeline.yml` porque ese recurso define el pipeline de datos; forzar ahí el entrenamiento rompería la separación recomendada entre ingeniería de datos y MLOps.
 
 ### Componentes implementados
 
-La fase queda distribuida en notebooks y utilidades con responsabilidades separadas:
+La fase de modelado se ha diseñado alrededor de cuatro decisiones específicas del caso de churn telco. La primera es que la unidad de predicción sea el par cliente-mes, no el cliente aislado: cada fila representa el estado observable de un cliente en un mes concreto y permite decidir si debe entrar o no en una campaña de retención. La segunda es que todas las variables se calculen con clave temporal (`usage_event_time`), de forma que el entrenamiento reproduce la información que habría estado disponible en una ejecución real.
 
-- `05_Training_Dataset_Generation.ipynb`: materializa `gold_churn_training_dataset` desde las tablas gold mediante Feature Engineering y `FeatureLookup`.
-- `07_Utils.py`: centraliza configuración, partición temporal, columnas, pipeline Spark MLlib, métricas y funciones de evaluación.
-- `07_Training_Job.ipynb`: entrena una configuración concreta de regresión logística en una sesión aislada.
-- `07_Evaluation_Job.ipynb`: evalúa un modelo serializado sobre el split indicado y devuelve métricas.
-- `07_MLflow_Experimentation.ipynb`: ejecuta el grid search, registra artefactos y promueve el mejor modelo al alias `candidate`.
-- `08_Utils.py`: encapsula la lógica champion-challenger, gestión de aliases y registro de decisiones.
-- `08_Production.ipynb`: evalúa el candidato en test, compara contra `champion` y decide promoción o rechazo.
+La tercera decisión es usar un modelo distribuido de Spark MLlib empaquetado como pipeline completo. Esto evita entrenar el preprocesado por separado y reduce el riesgo de diferencias entre entrenamiento, validación, prueba e inferencia. La cuarta decisión es gobernar el resultado con MLflow y Unity Catalog: cada ciclo deja trazados datos, parámetros, métricas, artefactos y aliases (`candidate`, `challenger`, `champion` o `rejected`) para que el modelo aceptado pueda auditarse.
 
-La orquestación reproducible se define en `resources/telco_churn_ml.job.yml` mediante el job `telco_churn_ml_orchestration`, con tres tareas secuenciales: `run_training_dataset_generation`, `run_mlflow_experimentation` y `run_production`.
+Operativamente, estas decisiones se orquestan en un job de Databricks con tres pasos: regenerar el dataset supervisado desde las tablas gold, ejecutar la búsqueda de hiperparámetros y aplicar el ciclo de promoción. Lo relevante es que el flujo completo es repetible y mantiene separada la fase de datos del pipeline Medallion del Hito 2.
 
 ### Generación del dataset de entrenamiento
 
@@ -345,11 +339,13 @@ La comprobación de calidad confirma que el dataset contiene `16.316.445` filas,
 
 La partición temporal validada fue:
 
-| Split | Periodo | Filas | Churn | No churn | % churn |
-|---|---|---:|---:|---:|---:|
-| Entrenamiento | 2023-07-01 a 2024-06-30 | 9.900.403 | 508.454 | 9.391.949 | 5,14% |
-| Validación | 2024-07-01 a 2024-09-30 | 3.262.300 | 144.869 | 3.117.431 | 4,44% |
-| Prueba | 2024-10-01 a 2024-12-01 | 3.153.742 | 135.349 | 3.018.393 | 4,29% |
+| Split | Periodo | Filas | % del dataset | Churn | No churn | % churn |
+|---|---|---:|---:|---:|---:|---:|
+| Entrenamiento | 2023-07-01 a 2024-06-30 | 9.900.403 | 60,68% | 508.454 | 9.391.949 | 5,14% |
+| Validación | 2024-07-01 a 2024-09-30 | 3.262.300 | 19,99% | 144.869 | 3.117.431 | 4,44% |
+| Prueba | 2024-10-01 a 2024-12-01 | 3.153.742 | 19,33% | 135.349 | 3.018.393 | 4,29% |
+
+La distribución deja aproximadamente un 60% de observaciones para ajustar el modelo y dos bloques cercanos al 20% para validación y prueba. Esta proporción es adecuada para el tamaño del dataset: el entrenamiento conserva volumen suficiente para aprender patrones generales, mientras que validación y prueba mantienen millones de observaciones y una cantidad suficiente de casos positivos para estimar AUC-PR y F1 con estabilidad.
 
 ### Arquitectura del pipeline de modelado
 
@@ -371,31 +367,35 @@ Se eligió regresión logística porque ofrece una primera línea base robusta, 
 
 ### Experimentación con MLflow
 
-La experimentación se ejecutó como búsqueda completa sobre ocho configuraciones:
+La experimentación se ejecutó como búsqueda completa sobre ocho configuraciones. En MLflow se registraron métricas tanto en entrenamiento como en validación para revisar rendimiento y posible sobreajuste:
 
-| `reg_param` | `elastic_net_param` | `max_iter` | AUC-PR validación | AUC-ROC validación | F1 validación | Umbral |
-|---:|---:|---:|---:|---:|---:|---:|
-| 0.01 | 0.0 | 100 | 0.988422 | 0.999053 | 0.993917 | 0.68 |
-| 0.01 | 0.0 | 200 | 0.988422 | 0.999053 | 0.993917 | 0.68 |
-| 0.01 | 0.5 | 100 | 0.990393 | 0.999233 | 0.995061 | 0.64 |
-| 0.01 | 0.5 | 200 | 0.990393 | 0.999233 | 0.995061 | 0.64 |
-| 0.1 | 0.0 | 100 | 0.966975 | 0.996650 | 0.990864 | 0.61 |
-| 0.1 | 0.0 | 200 | 0.966975 | 0.996650 | 0.990864 | 0.61 |
-| 0.1 | 0.5 | 100 | 0.964275 | 0.994287 | 0.992659 | 0.55 |
-| 0.1 | 0.5 | 200 | 0.964274 | 0.994287 | 0.992659 | 0.55 |
+| `reg_param` | `elastic_net_param` | `max_iter` | AUC-PR train | AUC-ROC train | F1 train | AUC-PR validación | AUC-ROC validación | F1 validación | Umbral |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.01 | 0.0 | 100 | 0.988688 | 0.998932 | 0.992246 | 0.988422 | 0.999053 | 0.993917 | 0.68 |
+| 0.01 | 0.0 | 200 | 0.988688 | 0.998932 | 0.992246 | 0.988422 | 0.999053 | 0.993917 | 0.68 |
+| 0.01 | 0.5 | 100 | 0.990224 | 0.999084 | 0.993554 | 0.990393 | 0.999233 | 0.995061 | 0.64 |
+| 0.01 | 0.5 | 200 | 0.990225 | 0.999084 | 0.993554 | 0.990393 | 0.999233 | 0.995061 | 0.64 |
+| 0.1 | 0.0 | 100 | 0.967972 | 0.996364 | 0.988957 | 0.966975 | 0.996650 | 0.990864 | 0.61 |
+| 0.1 | 0.0 | 200 | 0.967972 | 0.996364 | 0.988957 | 0.966975 | 0.996650 | 0.990864 | 0.61 |
+| 0.1 | 0.5 | 100 | 0.963315 | 0.993697 | 0.991321 | 0.964275 | 0.994287 | 0.992659 | 0.55 |
+| 0.1 | 0.5 | 200 | 0.963315 | 0.993697 | 0.991321 | 0.964274 | 0.994287 | 0.992659 | 0.55 |
 
 La métrica primaria fue AUC-PR, más adecuada que accuracy o AUC-ROC cuando la clase positiva es minoritaria. El mejor modelo fue la configuración `reg_param = 0.01`, `elastic_net_param = 0.5` y `max_iter = 100`, con AUC-PR de validación `0.990393`, AUC-ROC `0.999233`, F1 `0.995061`, precisión `0.995162`, recall `0.995007` y umbral óptimo `0.64`.
 
+El resultado en entrenamiento de ese mismo modelo fue AUC-PR `0.990224`, AUC-ROC `0.999084` y F1 `0.993554`. La diferencia de AUC-PR entre entrenamiento y validación fue prácticamente nula (`-0,000168`), por lo que no observamos señales de sobreajuste relevante en esta primera línea base. El incremento de `max_iter` de 100 a 200 no aportó mejora material, así que se mantuvo la configuración más simple.
+
 El experimento quedó registrado en MLflow en:
 
-- Experimento: `/Users/alonso.marcos@alu.uclm.es/telco_churn_churn_detection_training`
+- Experimento: `telco_churn_churn_detection_training`, creado en el espacio de usuario de Alonso
 - Parent run: `5cab64c09efe458e904e625678fa1cca`
 - Mejor run: `ec2ec49b626444f58f3b2db04ed44ee7`
 - Modelo registrado: `workspace.telco_churn.churn_lr_pipeline`
 
 ### Registro en Unity Catalog y ciclo champion-challenger
 
-El modelo se gobierna con aliases de Unity Catalog. En el primer ciclo validado, la versión 2 quedó como `champion` tras el arranque en frío. En la ejecución completa posterior del job, el nuevo candidato se registró como versión 3, se evaluó contra el champion y quedó marcado como `rejected` porque no mejoró estrictamente la métrica primaria en test.
+El modelo se gobierna con aliases de Unity Catalog. El primer despliegue se trató como arranque en frío: no existía ningún `champion` previo contra el que comparar, por lo que el mejor modelo de la búsqueda se promovió directamente tras evaluarse en el conjunto de prueba. Ese modelo reentrenado sobre el histórico completo quedó registrado como versión 2 y recibió el alias `champion`.
+
+La versión 3 no corresponde a un intento de promoción antes de tener modelo desplegado, sino a una segunda ejecución posterior del ciclo completo, ya con la versión 2 actuando como `champion`. En esa segunda ejecución, MLflow registró un nuevo mejor candidato con los mismos hiperparámetros, se movió temporalmente a `challenger`, se evaluó sobre el mismo bloque de prueba y no superó estrictamente la métrica primaria del `champion`. Por ese motivo se retiró el alias `challenger` y la versión quedó marcada como `rejected`.
 
 El estado final validado es:
 
@@ -404,14 +404,14 @@ El estado final validado es:
 | `champion` | 2 | Modelo actualmente aceptado para producción |
 | `rejected` | 3 | Candidato evaluado que no mejora al champion |
 
-La evaluación de producción del run `499bacbcdfd647f8a6342901b3419888` produjo:
+La evaluación de esa segunda ejecución (`run_id`: `499bacbcdfd647f8a6342901b3419888`) produjo:
 
 | Modelo | AUC-PR test | AUC-ROC test | F1 test | Decisión |
 |---|---:|---:|---:|---|
 | Champion v2 | 0.990086 | 0.999231 | 0.996431 | Se mantiene |
 | Challenger v3 | 0.990086 | 0.999231 | 0.996431 | Se rechaza por no mejorar estrictamente |
 
-La decisión es conservadora y coherente con un ciclo de producción: si un challenger empata al champion, no aporta valor operativo suficiente para cambiar el modelo aceptado. La tabla baseline para monitorización quedó materializada como `workspace.telco_churn.gold_churn_test_baseline`, con `3.153.742` filas y ventana `2024-10-01` a `2024-12-01`.
+La decisión es conservadora y coherente con un ciclo de producción: si un challenger empata al champion, no aporta valor operativo suficiente para cambiar el modelo aceptado. La tabla baseline para monitorización se generó en el primer ciclo de promoción del `champion` y quedó materializada como `workspace.telco_churn.gold_churn_test_baseline`, con `3.153.742` filas y ventana `2024-10-01` a `2024-12-01`.
 
 ### Orquestación y evidencia de ejecución
 
@@ -434,7 +434,7 @@ También se ejecutó antes una prueba parcial de producción (`run_id`: `8173895
 
 - mover el registro del modelo al notebook orquestador de MLflow, donde existe el `run_id` correcto;
 - hacer que producción pueda continuar si un reintento encuentra el alias `challenger` en vez de `candidate`;
-- usar un path de experimento directamente bajo `/Users/<usuario>/...`;
+- usar un experimento de usuario explícito y ya existente;
 - corregir la tabla baseline de `gold_fraud_test_baseline` a `gold_churn_test_baseline`;
 - limpiar textos heredados del ejemplo de fraude para mantener coherencia con churn.
 

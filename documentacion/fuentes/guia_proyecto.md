@@ -1,8 +1,8 @@
 # Guía del proyecto final
 
-_Fuente original: `guia_proyecto (1).pdf`._
+_Fuente original: `guia_proyecto_full.pdf`._
 
-_Transcripción completa del PDF: 20 páginas._
+_Transcripción completa del PDF: 24 páginas._
 
 ## Página 1
 
@@ -31,7 +31,7 @@ Este ejemplo servirá de hilo conductor a lo largo de todas las secciones, evide
 negocio abstracto se transforma, fase a fase, en un sistema técnico desplegado y monitorizado. Su objetivo
 es proporcionar una referencia tangible sobre la profundidad de análisis y la estructura argumental esperada
 en cada hito del proyecto.
-Página 1 de 20
+Página 1 de 24
 
 ---
 
@@ -77,7 +77,7 @@ distribuida innecesaria.
 Por tanto, en este apartado no basta con elegir una tecnología; debéis plantear y analizar críticamente al
 menos tres escenarios: una solución heurística (basada en reglas manuales), una solución de aprendizaje
 tradicional (para pequeños volúmenes de datos) y, finalmente, la solución big data.
-Página 2 de 20
+Página 2 de 24
 
 ---
 
@@ -127,7 +127,7 @@ de viabilidad y debe ser replanteado desde su diseño.
 Nota sobre la base de cálculo: Para completar la viabilidad técnica, deberéis esperar a recibir el
 conjunto de datos asignado, momento en el que podréis especificar los años de histórico y el volumen exacto
 de transacciones disponibles.
-Página 3 de 20
+Página 3 de 24
 
 ---
 
@@ -176,7 +176,7 @@ Guía de adaptación: Para la redacción de este apartado, es fundamental que di
 variables y las restricciones fijas de la asignatura. El primer párrafo del ejemplo (métricas de éxito) es estric-
 tamente dependiente de vuestro problema y debe recalcularse: debéis traducir la promesa económica
 del apartado anterior (ROI) a las métricas técnicas exactas que gobiernen vuestro modelo. En escenarios de
-Página 4 de 20
+Página 4 de 24
 
 ---
 
@@ -222,7 +222,7 @@ En cuanto al formato, la extensión total recomendada para esta sección (cubrie
 viabilidad y planificación) oscila entre las 2 y 4 páginas. Se valorará positivamente la capacidad de síntesis
 y el uso estratégico de elementos visuales (diagramas de arquitectura, tablas resumen o cronogramas) para
 enriquecer el texto sin caer en una redacción excesivamente extensa o redundante.
-Página 5 de 20
+Página 5 de 24
 
 ---
 
@@ -268,7 +268,7 @@ volúmenes (datos no estructurados o semiestructurados, como archivos planos, im
 Llevando la teoría anterior a nuestro caso práctico, el primer paso es definir nuestra estructura. Por las
 restricciones propias del entorno educativo, utilizaremos el catálogo predeterminado de la plataforma llamado
 workspace, que actuará como nuestro directorio compartido principal.
-Página 6 de 20
+Página 6 de 24
 
 ---
 
@@ -319,7 +319,7 @@ nuevas transacciones en un entorno de streaming en tiempo real.
 Antes de proceder con la subida a Databricks, es requisito indispensable haber ejecutado en vuestro entorno
 local el script de generación de datos correspondiente a vuestro proyecto. Dicho script se encargará de crear
 la estructura de carpetas poblada de datos que deberéis replicar en la nube.
-Página 7 de 20
+Página 7 de 24
 
 ---
 
@@ -366,7 +366,7 @@ rápido y visualizaciones que no forman parte del flujo de producción. En el co
 to, la fase de exploración no es un entregable obligatorio; no obstante, se valorará positivamente
 que el equipo documente en este directorio un análisis exploratorio previo al modelado, ya que refleja
 rigor metodológico y facilita la justificación de las decisiones de ingeniería tomadas en fases posteriores.
-Página 8 de 20
+Página 8 de 24
 
 ---
 
@@ -411,7 +411,7 @@ bronze_customers, bronze_labels y bronze_transactions en el caso de referencia).
 3.4.2. Metadatos de auditoría
 Al explorar estas tablas en la pestaña Sample Data , observaréis que, además de las columnas de negocio,
 se han generado columnas técnicas automáticas. Nótese la importancia crítica de metadatos como:
-Página 9 de 20
+Página 9 de 24
 
 ---
 
@@ -458,7 +458,7 @@ Por un lado, @dp.expect_or_drop elimina silenciosamente los registros que no sup
 que implica una pérdida de datos irrecuperable sin dejar rastro auditable. Por otro, @dp.expect_or_fail
 detiene completamente el pipeline ante el primer registro anómalo, lo que resulta inviable en flujos continuos
 donde la presencia de datos sucios es esperable. En su lugar, la estrategia correcta consiste en:
-Página 10 de 20
+Página 10 de 24
 
 ---
 
@@ -505,7 +505,7 @@ Por ejemplo, una transacción ocurre hoy, pero la confirmación final de si fue 
 semanas en generarse. Para cruzar estos dos flujos, el motor (Spark) necesita mantener las transacciones en
 su memoria de estado esperando a que llegue su correspondencia. Para evitar un error de falta de memoria,
 se utiliza la técnica de watermarking (marcas de agua).
-Página 11 de 20
+Página 11 de 24
 
 ---
 
@@ -550,7 +550,7 @@ Para garantizar la exactitud temporal (point-in-time correctness) en el entrenam
 cartar ninguna transacción por desajustes temporales, la estrategia de diseño óptima abandona el enfoque de
 streaming con ventanas fijas y utiliza un procesamiento por lotes (batch) con ventanas deslizantes
 (rolling windows). El proceso consiste en:
-Página 12 de 20
+Página 12 de 24
 
 ---
 
@@ -565,6 +565,15 @@ pasada.
 Esta tabla finalizada permite calcular métricas derivadas complejas de un solo vistazo, como por ejemplo la
 ratio entre el gasto de las últimas 24 horas y la media de los últimos 30 días, conservando el contexto histórico
 exacto e individual de cada transacción.
+Al igual que ocurre con la tabla spine, este componente genera dos tablas con propósitos distintos. La prime-
+ra, gold_customer_aggregations, lee de silver_fraud_events e incluye únicamente las transac-
+ciones con etiqueta confirmada, garantizando la corrección temporal durante el entrenamiento. La segunda,
+gold_customer_aggregations_inference, lee directamente de bronze_transactions para incluir
+todas las transacciones sin esperar al watermark ni a los filtros de calidad de la capa plata, y une las etiquetas
+confirmadas disponibles en bronze_labels para calcular num_fraud_confirmed_30d. Las transaccio-
+nes sin etiqueta confirmada se tratan como no fraudulentas (0), que es la única información disponible en el
+momento de la predicción. Esta separación sigue el patrón estándar de la industria conocido como training-
+serving split.
 3.6.2. Perfiles estáticos
 El segundo componente (03_gold_customer_profile.py) procesa los datos dimensionales (el histórico
 creado en la capa plata) para derivar características estáticas o demográficas (por ejemplo, agrupar edades
@@ -591,27 +600,36 @@ CDF : Para las tablas físicas, al definir las propiedades (table_properties), s
 tecte y sincronice únicamente los registros que han cambiado (inserciones, actualizaciones o borrados)
 leyendo el log de transacciones de Delta, reduciendo drásticamente la latencia y los costes de compu-
 tación al publicar los datos hacia el entorno online.
-Para verificar que el registro automático ha funcionado, podéis dirigiros a la pestaña Features en el menú
-lateral de la plataforma, donde veréis vuestras tablas listas para ser servidas.
-3.6.3. Tabla base o ancla
-El tercer componente (03_gold_fraud_spine.py) genera la tabla spine (columna vertebral). Esta tabla
-es la base fundamental que se utilizará para el entrenamiento del modelo. Contiene exclusivamente los identi-
-ficadores primarios (por ejemplo, customer_id), las marcas de tiempo exactas del evento (timestamp), la
-Página 13 de 20
+Página 13 de 24
 
 ---
 
 ## Página 14
 
-variable objetivo a predecir y las características en tiempo real que llegan inherentemente con la petición (por
-ejemplo, importe, país del comercio y tipo de dispositivo). La naturaleza de la variable objetivo dependerá
-del tipo de problema: en un problema de clasificación será una etiqueta categórica (por ejemplo, is_fraud),
-mientras que en un problema de regresión será una variable continua (por ejemplo, el importe estimado de
-pérdida). Debéis adaptarla a vuestro caso de uso específico.
-Es de vital importancia entender que en este script no se unen los datos del cliente ni las agregaciones
-calculadas en los pasos anteriores. La inyección de los perfiles y las agregaciones a la tabla spine se realizará
-de manera automática más adelante (en la fase de modelado) mediante las capacidades de cruce del feature
-store.
+Para verificar que el registro automático ha funcionado, podéis dirigiros a la pestaña Features en el menú
+lateral de la plataforma, donde veréis vuestras tablas listas para ser servidas.
+3.6.3. Tabla base o ancla
+El tercer componente (03_gold_fraud_spine.py) genera dos tablas spine (columna vertebral) con propó-
+sitos distintos. La primera, gold_fraud_spine, es la base fundamental para el entrenamiento del modelo.
+Contiene exclusivamente los identificadores primarios (por ejemplo, customer_id), las marcas de tiempo
+exactas del evento (timestamp), la variable objetivo a predecir y las características en tiempo real que llegan
+inherentemente con la petición (por ejemplo, importe, país del comercio y tipo de dispositivo). La naturaleza
+de la variable objetivo dependerá del tipo de problema: en un problema de clasificación será una etiqueta
+categórica (por ejemplo, is_fraud), mientras que en un problema de regresión será una variable continua
+(por ejemplo, el importe estimado de pérdida). Debéis adaptarla a vuestro caso de uso específico.
+La segunda, gold_fraud_inference_spine, es la base para la inferencia en producción. Contiene exac-
+tamente las mismas columnas que gold_fraud_spine salvo is_fraud y label_available_date, que
+no están disponibles en el momento de la predicción. A diferencia de gold_fraud_spine, que depende del
+stream-stream join con las etiquetas y del avance del watermark para emitir filas, esta tabla lee directamente
+de bronze_transactions, garantizando que todas las transacciones entrantes estén disponibles para ser
+puntuadas de forma inmediata, independientemente de si han pasado los filtros de calidad de la capa plata o
+si su etiqueta de fraude ha llegado. En un sistema de detección de fraude en producción real, no puntuar una
+transacción equivale a aprobarla sin análisis de riesgo, por lo que es preferible puntuar con incertidumbre a
+no puntuar.
+Es de vital importancia entender que en ninguna de estas tablas se unen los datos del cliente ni las agre-
+gaciones calculadas en los pasos anteriores. La inyección de los perfiles y las agregaciones a la tabla spine se
+realizará de manera automática más adelante (en la fase de modelado) mediante las capacidades de cruce del
+feature store.
 3.7. Orquestación de extremo a extremo y publicación de características
 Para que el sistema de detección de fraude funcione de manera autónoma en producción, la lógica de trans-
 formación (capas bronce, plata y oro) y la puesta a disposición de las características deben integrarse en
@@ -620,9 +638,10 @@ dos como Workflows), que actúan como el motor central que orquesta y dispara (t
 infraestructura en el orden cronológico correcto.
 Como se evidencia en la arquitectura desplegada para este proyecto, hemos creado un Job automatizado
 (denominado Credit Card Fraud Feature Pipeline) navegando a través de Jobs & pipelines →
-Create → Job . Al configurar un disparador (Trigger ) programado para este Job (por ejemplo, con cadencia
-horaria), garantizamos que el ciclo completo se realice de forma totalmente desatendida. Este flujo de trabajo
-encadena secuencialmente dos tareas fundamentales:
+Create → Job . Al configurar un disparador (Trigger ) programado para este Job con cadencia de dos
+horas arrancando a las 00:45 (0 45 0/2 * * ?), garantizamos que el ciclo completo se realice de forma
+totalmente desatendida y con un desfase de 45 minutos respecto al job de simulación, que se detalla más
+abajo. Este flujo de trabajo encadena secuencialmente dos tareas fundamentales:
 3.7.1. Ejecución del pipeline Medallion y modos de infraestructura
 La primera tarea del flujo (Run_Medallion_Pipeline) es de tipo Pipeline y dispara la ejecución de
 nuestro código orquestado por DLT. Se encarga de ingerir los nuevos datos crudos de la landing zone, aplicar
@@ -630,6 +649,12 @@ las reglas de calidad en la capa plata y recalcular las agregaciones en la capa 
 Dado que esta tarea está gobernada por el disparador programado del Job, el pipeline se ejecuta internamente
 en modo Triggered (por lotes o eventos disponibles). La gran ventaja arquitectónica de utilizar DLT es que
 no tendríais que cambiar ni una sola línea de vuestro código en Python para llevar este sistema a
+Página 14 de 24
+
+---
+
+## Página 15
+
 producción en tiempo real continuo. Si el caso de uso exigiera latencia cero y el presupuesto lo permitiera,
 bastaría con ir a los ajustes del pipeline y cambiar el Pipeline mode a Continuous . Vuestro código pasaría
 a procesar los datos en streaming ininterrumpido.
@@ -643,24 +668,17 @@ aprendizaje automático que desarrollaréis en la siguiente fase del proyecto.
 Una vez que la capa oro ha sido actualizada por la primera tarea, la segunda tarea (Publish_to_Online_Store)
 entra en acción. Se trata de una ejecución de tipo Notebook que depende estrictamente de que el pipeline
 anterior finalice con éxito.
-Página 14 de 20
-
----
-
-## Página 15
-
 Aunque las tablas Delta de la capa oro son excelentes para el procesamiento analítico y el entrenamiento
 de modelos fuera de línea, sus tiempos de lectura no son adecuados para la inferencia en vivo. Para resolver
 esto, esta tarea ejecuta un script de configuración que registra y publica las tablas en un online feature store
 respaldado por Lakebase. El online feature store es una instancia gestionada que sirve características con
 latencia inferior a 10 milisegundos.
 Es crucial destacar la estrategia de publicación implementada en esta fase:
-Selección de tablas: Se publican gold_customer_profile y gold_customer_aggregations,
-reconocidas automáticamente como tablas de características gracias a sus claves primarias. De este
-modo, la capa de serving puede recuperar el perfil demográfico y las señales de comportamiento actuales
-del cliente en tiempo real. Por el contrario, la tabla gold_fraud_spine no se publica aquí porque
-no es una tabla de características: es el andamio que el Job de entrenamiento usa para buscar las
-características.
+Selección de tablas: Se publican gold_customer_profile, gold_customer_aggregations
+y gold_customer_aggregations_inference, reconocidas automáticamente como tablas de ca-
+racterísticas gracias a sus claves primarias. La tabla gold_customer_aggregations_inference
+es la que consume el pipeline de inferencia en producción, garantizando que las agregaciones de com-
+portamiento reflejen todas las transacciones entrantes sin restricciones de watermark.
 Modo de sincronización: En consonancia con la naturaleza del Job programado y la utilización de
 ventanas deslizantes en las agregaciones, el script utiliza el modo de publicación TRIGGERED. Este
 modo requiere que el CDF esté habilitado en las tablas de origen, lo que permite propagar exactamente
@@ -678,7 +696,7 @@ Dentro de este límite, se valorará muy positivamente la capacidad de síntesis
 de diseño y el uso estratégico de elementos visuales de apoyo. Os animamos a enriquecer el documento
 incluyendo diagramas conceptuales de vuestra arquitectura de datos, capturas progresivas del DAG a medida
 que el pipeline crece fase a fase, o tablas resumen para ilustrar vuestros esquemas y reglas de validación.
-Página 15 de 20
+Página 15 de 24
 
 ---
 
@@ -726,7 +744,7 @@ Spark ML en entornos serverless.
 El primer paso de esta fase es materializar el conjunto de datos de entrenamiento a partir de las ta-
 blas de la capa oro construidas en la fase anterior. Este paso se ejecuta una única vez por ciclo de re-
 entrenamiento y su resultado se persiste como tabla Delta estática en Unity Catalog (por ejemplo,
-Página 16 de 20
+Página 16 de 24
 
 ---
 
@@ -772,7 +790,7 @@ de clases presenta 58.108.076 transacciones legítimas (96.85 %), 1.757.224 frau
 y 134.700 transacciones con etiqueta nula (0.22 %), correspondientes a operaciones recientes aún no
 auditadas que se descartan antes de persistir. El fuerte desequilibrio confirma la necesidad de aplicar
 pesos de clase en el clasificador.
-Página 17 de 20
+Página 17 de 24
 
 ---
 
@@ -821,7 +839,7 @@ F1-score en validación como best_threshold_val, que se propaga a todos los reen
 res. Por cada configuración se registran en MLflow los artefactos de diagnóstico: curva precisión-exhaustividad
 (PR), curva característica operativa del receptor (ROC), matriz de confusión, curva de calibración, barrido
 de umbral y coeficientes del modelo.
-Página 18 de 20
+Página 18 de 24
 
 ---
 
@@ -868,7 +886,7 @@ ambos modelos, el delta de AUC-PR y la decisión tomada.
 Nota importante para la memoria del proyecto: Debéis documentar los resultados de la evaluación en
 prueba del challenger y, si existe, del champion, indicando la decisión de promoción y su justificación. Si es
 el primer ciclo, indicad que no existe champion previo y que el challenger se promueve directamente.
-Página 19 de 20
+Página 19 de 24
 
 ---
 
@@ -906,4 +924,169 @@ En cuanto al formato, la extensión total recomendada para esta sección oscila 
 Se valorará positivamente la inclusión de capturas de la interfaz de MLflow que ilustren la comparativa de
 experimentos, tablas resumen con los resultados del grid search y los diagramas del flujo de aliases en Unity
 Catalog.
-Página 20 de 20
+Página 20 de 24
+
+---
+
+## Página 21
+
+5. Despliegue y monitorización
+Una vez que el modelo champion ha sido promovido en el registro de modelos de MLflow, el sistema entra
+en su fase de producción. Esta fase se articula en torno a tres componentes principales: la simulación de
+llegada de datos, el pipeline de inferencia y enriquecimiento de etiquetas, y la monitorización continua del
+rendimiento del modelo.
+5.1. Simulación de llegada de datos
+En un entorno real, las transacciones llegan de forma continua desde sistemas externos. Para replicar este com-
+portamiento en el entorno de desarrollo, se ha implementado una libreta de simulación (10_Simulation.ipynb)
+que inyecta datos de forma incremental desde el directorio source_buffer hacia events, respetando la
+partición por año y mes que el Auto Loader espera.
+El mecanismo es idempotente: antes de comenzar, la libreta consulta el timestamp máximo ya presente
+en events/transactions y omite todas las filas anteriores o iguales a ese valor, garantizando que no se
+duplican datos en caso de fallo o relanzamiento.
+La cantidad de datos inyectados en cada ejecución se controla mediante el parámetro hours_to_inject,
+que especifica cuántas horas de datos del buffer se inyectan por ciclo. Por ejemplo, con hours_to_inject
+= 12 se inyectan todas las transacciones cuyo timestamp cae dentro de las 12 horas siguientes al últi-
+mo punto de continuación. Para cada ventana temporal inyectada, se copian también las etiquetas cuyo
+label_available_date cae dentro de esa misma ventana, simulando el retraso real con el que los
+equipos de revisión confirman los casos de fraude.
+Una vez validado el flujo en modo manual, la libreta se integra como tarea Run_Simulation en el trabajo
+Credit Card Fraud Simulation Pipeline, configurado con la siguiente cadencia:
+Parámetro: hours_to_inject = 12
+Cadencia: cada 2 horas (0 30 0/2 * * ?)
+Reintentos: 1 reintento con 2 minutos de espera
+A este ritmo, los 6 meses de datos del buffer (4.380 horas) se agotan en aproximadamente 30 días, con cada
+hora real equivaliendo a medio día de datos simulados.
+5.2. Pipeline de inferencia y enriquecimiento de etiquetas
+La libreta 09_Inference_And_Label_Enrichment.ipynb implementa el ciclo completo de inferencia
+en producción. Su estructura se divide en las siguientes fases:
+5.2.1. Carga del modelo champion
+Se carga la versión del modelo registrada bajo el alias champion en MLflow Unity Catalog. La versión
+se registra como metadato en cada predicción mediante la columna model_version, lo que permite al
+monitor de producción segmentar las métricas por versión del modelo.
+5.2.2. Identificación de transacciones nuevas
+Se leen las transacciones de gold_fraud_inference_spine que aún no tienen predicción en la tabla
+gold_fraud_inference_enriched, mediante un LEFT ANTI JOIN sobre transaction_id. Solo se
+Página 21 de 24
+
+---
+
+## Página 22
+
+puntúan las transacciones nuevas, garantizando idempotencia.
+5.2.3. Enriquecimiento con el feature store
+Las transacciones nuevas se enriquecen con las características del cliente mediante el feature store de Databricks,
+realizando point-in-time joins contra dos tablas:
+gold_customer_profile: características estáticas o de actualización lenta del cliente (edad, seg-
+mento, canal preferido, etc.).
+gold_customer_aggregations_inference: agregaciones de comportamiento en ventanas desli-
+zantes de 1 hora, 24 horas, 7 días y 30 días. Esta tabla lee directamente de bronze_transactions,
+garantizando que todas las transacciones están disponibles para ser puntuadas inmediatamente, inde-
+pendientemente de si han pasado los filtros de calidad de la capa plata o si su etiqueta ha llegado.
+Separar en gold_customer_aggregations (entrenamiento) y gold_customer_aggregations_inference
+(inferencia) responde al patrón estándar de la industria conocido como training-serving split: el entrenamiento
+requiere etiquetas confirmadas y corrección temporal estricta, mientras que la inferencia requiere disponibi-
+lidad inmediata de todas las transacciones.
+5.2.4. Puntuación y escritura de predicciones
+El modelo champion transforma el DataFrame enriquecido y genera, para cada transacción, la proba-
+bilidad de fraude (prob_fraud) y la predicción binaria (prediction). Los resultados se escriben en
+gold_fraud_inference_enriched mediante un MERGE que inserta únicamente las filas nuevas, evi-
+tando duplicados.
+5.2.5. Propagación de etiquetas
+De forma asíncrona, a medida que los equipos de revisión confirman los casos de fraude, las etiquetas llegan a
+bronze_labels. La sección de enriquecimiento de etiquetas propaga estas confirmaciones a gold_fraud_inference_enriched
+filtrando por label_available_date, de forma que el monitor de producción pueda calcular métricas de
+rendimiento reales sobre las predicciones ya emitidas.
+El pipeline de inferencia se integra como tarea Run_Inference_And_Label_Enrichment en el trabajo
+Credit Card Fraud Inference Pipeline, independiente del pipeline de características y desfasado
+45 minutos respecto a él:
+Cadencia: cada 2 horas con desfase de 45 minutos respecto al Credit Card Fraud Feature
+Pipeline
+Reintentos: 2 reintentos con 5 minutos de espera
+Timeout: 45 minutos
+5.3. Monitorización con Lakehouse Monitoring
+Una vez que gold_fraud_inference_enriched acumula predicciones y etiquetas confirmadas, se con-
+figura un monitor de producción mediante Databricks Lakehouse Monitoring. Este monitor calcula
+automáticamente métricas de calidad del dato, drift estadístico y rendimiento del modelo sobre ventanas
+temporales configurables.
+Página 22 de 24
+
+---
+
+## Página 23
+
+5.3.1. Configuración del monitor
+El monitor se configura sobre la tabla gold_fraud_inference_enriched con los siguientes parámetros:
+Profile type: Inference profile
+Problem type: Classification
+Prediction column: prediction
+Label column: is_fraud
+Timestamp column: inference_timestamp
+Model ID column: model_version
+Metric granularities: 1 day
+Baseline table: gold_fraud_test_baseline
+Schedule: refresco controlado por un job diario a las 03:00
+5.3.2. Slices operativos
+Se configura un slice operativo sobre cross_border = 1 para monitorizar el rendimiento del modelo
+específicamente sobre transacciones internacionales, que presentan un perfil de riesgo distinto al de las tran-
+sacciones domésticas. La arquitectura admite la adición de más slices operativos o de equidad (por ejemplo,
+gender, age_group, customer_segment) según las necesidades del equipo, con un impacto estimado de
+entre 2 a 5 minutos adicionales por cada slice añadido.
+5.3.3. Métricas personalizadas de negocio
+Además de las métricas estadísticas estándar, se configura una métrica personalizada alineadas con los KPIs
+del negocio:
+blocked_legitimate_count: número de transacciones legítimas bloqueadas incorrectamente (fal-
+sos positivos).
+Esta métricas se almacena en gold_fraud_inference_enriched_profile_metrics junto con el resto
+de métricas del monitor, y pueden consultarse directamente mediante SQL.
+5.4. Alerta de degradación del modelo
+Para detectar de forma automática la degradación del modelo en producción, se configura una alerta SQL en
+Databricks SQL que compara el F1-score de la clase fraude (is_fraud = 1) de la ventana diaria más
+reciente contra el F1-score del baseline de test.
+La alerta se dispara cuando f1_delta <-0.05, es decir, cuando el F1-score de fraude cae más de 5 puntos
+porcentuales por debajo del baseline. La alerta se configura para ejecutarse diariamente a las 04:00, notificando
+por correo electrónico al equipo en caso de degradación.
+Página 23 de 24
+
+---
+
+## Página 24
+
+5.5. Arquitectura de jobs en producción
+La arquitectura final de orquestación en producción se articula en torno a cuatro jobs independientes con
+cadencias desfasadas para evitar solapamientos:
+Credit Card Fraud Simulation Pipeline: cada 2 horas (hours_to_inject = 12). Inyecta
+nuevas transacciones y etiquetas en events/.
+Credit Card Fraud Feature Pipeline: cada 2 horas con 30 minutos de desfase respecto al job
+de simulación. Ejecuta el pipeline Medallion y publica las características en el online feature store.
+Credit Card Fraud Inference Pipeline: cada 2 horas con 45 minutos desfase respecto al pi-
+peline de características. Puntúa las transacciones nuevas y propaga las etiquetas confirmadas.
+Monitor diario: a las 03:00, refresca el monitor y evalúa la alerta de degradación a las 04:00.
+Esta separación en jobs independientes con desfase temporal, en lugar de dependencias explícitas entre tareas,
+es el patrón estándar en la industria para sistemas de detección de fraude en batch: cada componente opera
+de forma autónoma y el desfase garantiza que los datos estén disponibles cuando el siguiente job arranca, sin
+acoplamientos que propaguen fallos en cascada.
+Consideraciones finales
+El desarrollo de este apartado de la memoria debe dar respuesta a los diferentes puntos y requerimientos que
+se han ido señalando explícitamente a lo largo de esta guía. No obstante, como equipo, tenéis total libertad
+para ampliar el alcance, profundizar en la justificación de vuestras decisiones de diseño o incorporar detalles
+arquitectónicos adicionales si la naturaleza y complejidad de vuestro problema de negocio lo requiere.
+En particular, se espera que la memoria documente los siguientes elementos:
+Decisiones de diseño del pipeline de inferencia: justificad la separación entre las tablas de entre-
+namiento e inferencia (training-serving split), explicando por qué una única tabla no puede satisfacer
+los requisitos de ambos contextos simultáneamente.
+Configuración del monitor: detallad los parámetros seleccionados (granularidad, slices, métricas
+personalizadas y tabla baseline), justificando cada elección en términos de coste computacional y valor
+informativo para el negocio.
+Definición de la alerta: explicad la métrica de degradación elegida, el umbral de disparo y su relación
+con los KPIs económicos definidos en la fase de alcance y viabilidad.
+Arquitectura de jobs: describid la cadencia de cada job, el desfase temporal entre ellos y la justifi-
+cación de por qué se han diseñado como jobs independientes en lugar de tareas secuenciales dentro de
+un mismo flujo de trabajo.
+Resultados observados: una vez que el sistema lleve varios ciclos en producción, documentad los
+primeros resultados del monitor: distribución de predicciones, primeras etiquetas confirmadas, F1-score
+observado en producción y comparativa con el baseline.
+En cuanto al formato, la extensión total recomendada para esta sección oscila entre las 3 y 6 páginas.
+Se valorará positivamente la inclusión de capturas de la interfaz del monitor de Databricks Lakehouse
+Monitoring, tablas resumen con las métricas de producción observadas y diagramas del flujo de orquestación
+de los jobs.
+Página 24 de 24
