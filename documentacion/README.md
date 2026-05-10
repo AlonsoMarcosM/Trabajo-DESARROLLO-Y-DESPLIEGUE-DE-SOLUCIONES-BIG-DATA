@@ -1,45 +1,59 @@
-﻿# Documentacion del proyecto
+# Documentación del proyecto
 
-Esta carpeta organiza la memoria tecnica del proyecto por hitos, manteniendo el enfoque incremental exigido por la asignatura.
+Esta carpeta contiene la memoria técnica incremental del proyecto y los recursos gráficos asociados.
 
 ## Estructura
 
-- `fuentes/`: material de referencia (incluye la guia oficial del proyecto).
-- `hito_1/`: version de memoria entregada para Hito 1.
-- `hito_2/`: version incremental de memoria entregada para Hito 2.
-- `hito_3/`: version incremental de memoria para Hito 3.
-- `hito_4/`: version final incremental de memoria para Hito 4.
+```text
+documentacion/
+├── assets/                         — capturas de pantalla referenciadas en la memoria
+│   ├── hito2_pipeline_medallion_dag.png
+│   ├── hito3_mlflow_experiment_aucpr.png
+│   ├── hito3_unity_catalog_model_aliases.png
+│   ├── hito3_job_ml_success.png
+│   ├── hito4_simulation_job_success.png
+│   ├── hito4_pipeline_propietario_updates.png
+│   ├── hito4_job_diario_run_success.png
+│   ├── hito4_inference_table_counts.png
+│   ├── hito4_lakehouse_monitor_dashboard.png
+│   └── hito4_alerts_ok.png
+├── memoria.md                      — memoria técnica incremental completa (Hitos 1-4)
+├── memoria.pdf                     — versión PDF para entrega
+├── memoria.tex                     — fuente LaTeX
+└── README.md
+```
+
+Las carpetas `fuentes/`, `hito_1/`, `hito_2/` y `hito_3/` existen en local pero están excluidas del repositorio remoto (`.gitignore`).
+
+## Documento principal
+
+`memoria.md` es la memoria técnica incremental única que cubre los cuatro hitos:
+
+- **Hito 1**: alcance, selección técnica, viabilidad y planificación.
+- **Hito 2**: entorno, gobernanza, Bronze, Silver, Gold y verificación.
+- **Hito 3**: modelado, experimentación y evaluación.
+- **Hito 4**: despliegue, monitorización y cierre.
+
+Cada hito incorpora todo el contenido de los anteriores manteniendo continuidad narrativa.
 
 ## Regla incremental de memoria
 
-- Cada `memoria_hito_N` debe incluir:
-  - todo el contenido de hitos anteriores,
-  - el desarrollo completo del hito actual,
-  - apartados reservados para hitos futuros si aun no estan completados.
-- No crear memorias desconectadas por hito.
-- Mantener continuidad narrativa entre entregas.
+- Cada versión incluye el desarrollo completo de todos los hitos hasta la fecha de entrega.
+- No se crean memorias desconectadas por hito.
+- La memoria se entrega también en PDF generado desde LaTeX (`memoria.tex`).
 
-## Fuente de estructura obligatoria
+## Estado validado Hito 4
 
-- Referencia principal: `documentacion/fuentes/guia_proyecto.md`.
-- La estructura minima esperada por hito se deriva de esa guia:
-  - Hito 1: alcance, seleccion tecnica, viabilidad y planificacion.
-  - Hito 2: entorno, gobernanza, bronze, silver, gold y verificacion.
-  - Hito 3: modelado, experimentacion y evaluacion.
-  - Hito 4: despliegue, monitorizacion y cierre.
-
-## Estado validado Hito 3
-
-- Memoria principal: `hito_3/memoria_hito_3.md`.
-- Job validado: `telco_churn_ml_orchestration` (`run_id`: `329240873651157`, estado `SUCCESS`).
-- Definicion del job: `../codigo/resources/telco_churn_ml.job.yml`.
+- Memoria principal: `memoria.md`.
+- Job ML validado: `telco_churn_ml_orchestration` (estado `SUCCESS`).
 - Modelo registrado: `workspace.telco_churn.churn_lr_pipeline`.
-- Alias finales: `champion` version 2 y `rejected` version 3.
-- Tabla baseline: `workspace.telco_churn.gold_churn_test_baseline`.
-- Decision documentada: los notebooks de modelado no se insertan en `resources/telco_churn.pipeline.yml`; se orquestan por Job porque la guia separa Hito 3 del pipeline declarativo Medallion.
+- Alias finales: `champion` versión 2, `rejected` versión 3.
+- Tabla de inferencia enriquecida: `workspace.telco_churn.gold_churn_inference_enriched`.
+- Monitorización activa: `gold_churn_inference_enriched_profile_metrics` y `drift_metrics`.
+- Alertas configuradas: accuracy, drift, completitud y volumen.
 
 ## Regla de formato
 
-- Los archivos `.md` deben estar en Markdown real.
+- Los archivos `.md` están en Markdown estándar.
 - Los archivos `.tex` se reservan para LaTeX.
-- No mezclar sintaxis LaTeX estructural dentro de `.md`.
+- Las imágenes se referencian con rutas relativas desde `documentacion/`: `assets/nombre.png`.

@@ -116,10 +116,21 @@ Este repositorio demuestra competencias prácticas en:
 │           └── utilities/
 │               └── generate.py
 ├── documentacion/
-│   ├── hito_1/
-│   ├── hito_2/
-│   ├── hito_3/
-│   └── hito_4/
+│   ├── assets/
+│   │   ├── hito2_pipeline_medallion_dag.png
+│   │   ├── hito3_mlflow_experiment_aucpr.png
+│   │   ├── hito3_unity_catalog_model_aliases.png
+│   │   ├── hito3_job_ml_success.png
+│   │   ├── hito4_simulation_job_success.png
+│   │   ├── hito4_pipeline_propietario_updates.png
+│   │   ├── hito4_job_diario_run_success.png
+│   │   ├── hito4_inference_table_counts.png
+│   │   ├── hito4_lakehouse_monitor_dashboard.png
+│   │   └── hito4_alerts_ok.png
+│   ├── memoria.md
+│   ├── memoria.pdf
+│   ├── memoria.tex
+│   └── README.md
 ├── .gitignore
 └── README.md
 ```
@@ -571,10 +582,7 @@ Es especialmente relevante para roles como:
 
 - [codigo/README.md](codigo/README.md): guía técnica de ejecución reproducible.
 - [codigo/src/medallion_pipeline/README.md](codigo/src/medallion_pipeline/README.md): explicación del pipeline Medallion.
-- [documentacion/hito_1](documentacion/hito_1): alcance y viabilidad.
-- [documentacion/hito_2](documentacion/hito_2): preparación y gestión de datos.
-- [documentacion/hito_3](documentacion/hito_3): modelado y experimentación.
-- [documentacion/hito_4](documentacion/hito_4): despliegue y monitorización.
+- [documentacion/memoria.md](documentacion/memoria.md): memoria técnica incremental completa (Hitos 1, 2, 3 y 4).
 
 ---
 
