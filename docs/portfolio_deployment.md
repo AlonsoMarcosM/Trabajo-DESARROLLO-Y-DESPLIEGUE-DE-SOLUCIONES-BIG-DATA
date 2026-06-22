@@ -6,4 +6,4 @@ El workflow `.github/workflows/pages.yml` construye el repositorio con Jekyll y 
 
 La web no ejecuta pipelines ni modelos. La reproducción real continúa mediante Databricks Asset Bundles y los comandos documentados en `codigo/`.
 
-Última verificación de configuración: 2026-06-22.
+Última verificación pública: 2026-06-22, respuesta HTTP 200 y workflow completo.
