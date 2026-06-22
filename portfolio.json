@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "repository": "AlonsoMarcosM/Trabajo-DESARROLLO-Y-DESPLIEGUE-DE-SOLUCIONES-BIG-DATA",
+  "repository_url": "https://github.com/AlonsoMarcosM/Trabajo-DESARROLLO-Y-DESPLIEGUE-DE-SOLUCIONES-BIG-DATA",
+  "title": {"es": "Telco Churn Big Data y MLOps", "en": "Telco Churn Big Data and MLOps"},
+  "summary": {
+    "es": "Pipeline Medallion y ciclo MLOps completo sobre Databricks Lakehouse.",
+    "en": "End-to-end Medallion and MLOps lifecycle on Databricks Lakehouse."
+  },
+  "technologies": ["Databricks", "PySpark", "Delta Lake", "MLflow", "Unity Catalog"],
+  "deployment": {
+    "type": "documentation",
+    "provider": "github-pages",
+    "mode": "static-evidence",
+    "source_branch": "main",
+    "status": "prepared",
+    "url": "https://alonsomarcosm.github.io/Trabajo-DESARROLLO-Y-DESPLIEGUE-DE-SOLUCIONES-BIG-DATA/"
+  }
+}
