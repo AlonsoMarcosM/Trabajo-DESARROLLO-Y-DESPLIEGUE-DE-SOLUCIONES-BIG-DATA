@@ -1,5 +1,7 @@
 # Telco Churn Big Data & MLOps Platform
 
+> **Despliegue público:** [Abrir despliegue](https://alonsomarcosm.github.io/Trabajo-DESARROLLO-Y-DESPLIEGUE-DE-SOLUCIONES-BIG-DATA/)
+
 Proyecto académico-profesional de **Big Data, Data Engineering y MLOps** desarrollado sobre **Databricks Lakehouse** para predecir la fuga de clientes en una compañía de telecomunicaciones.
 
 El objetivo no es únicamente entrenar un modelo de machine learning, sino construir un flujo completo de datos y ML: generación de datos, ingesta, arquitectura Medallion, calidad del dato, feature engineering, entrenamiento, registro de modelo, inferencia batch, enriquecimiento con etiquetas reales, monitorización y alertas.
